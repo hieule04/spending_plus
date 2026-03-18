@@ -1,0 +1,36 @@
+erDiagram
+    USERS ||--o{ ACCOUNTS : "has"
+    USERS ||--o{ CATEGORIES : "creates"
+    USERS ||--o{ TRANSACTIONS : "makes"
+    ACCOUNTS ||--o{ TRANSACTIONS : "funds"
+    CATEGORIES ||--o{ TRANSACTIONS : "classifies"
+
+    USERS {
+        UUID id PK
+        VARCHAR email
+        VARCHAR password_hash
+    }
+    ACCOUNTS {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR name
+        NUMERIC balance
+        TIMESTAMP updated_at
+    }
+    CATEGORIES {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR name
+        VARCHAR type
+        TIMESTAMP updated_at
+    }
+    TRANSACTIONS {
+        UUID id PK
+        UUID user_id FK
+        UUID account_id FK
+        UUID category_id FK
+        NUMERIC amount
+        TIMESTAMP date
+        TEXT note
+        TIMESTAMP updated_at
+    }
