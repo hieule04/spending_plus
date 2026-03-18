@@ -40,7 +40,7 @@ class AccountCreate(AccountBase):
 
 class AccountResponse(AccountBase):
     id: UUID
-    owner_id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: datetime
     
@@ -61,7 +61,7 @@ class CategoryCreate(CategoryBase):
 
 class CategoryResponse(CategoryBase):
     id: UUID
-    owner_id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: datetime
     
@@ -82,9 +82,17 @@ class TransactionBase(BaseModel):
 class TransactionCreate(TransactionBase):
     pass
 
+class TransactionUpdate(BaseModel):
+    amount: Optional[Decimal] = None
+    type: Optional[str] = None
+    date: Optional[datetime] = None
+    note: Optional[str] = None
+    account_id: Optional[UUID] = None
+    category_id: Optional[UUID] = None
+
 class TransactionResponse(TransactionBase):
     id: UUID
-    owner_id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: datetime
     

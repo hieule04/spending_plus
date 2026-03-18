@@ -21,9 +21,9 @@ class User(Base):
     deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
 
     # Quan hệ
-    accounts = relationship("Account", back_populates="owner")
-    categories = relationship("Category", back_populates="owner")
-    transactions = relationship("Transaction", back_populates="owner")
+    accounts = relationship("Account", back_populates="user")
+    categories = relationship("Category", back_populates="user")
+    transactions = relationship("Transaction", back_populates="user")
 
 
 class Account(Base):
@@ -35,7 +35,7 @@ class Account(Base):
     type = Column(String, nullable=False)  # ví dụ: "cash", "bank", "credit"
     balance = Column(Numeric(15, 2), default=0.0)
     
-    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     
     # Audit fields
     created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
@@ -43,7 +43,7 @@ class Account(Base):
     deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
 
     # Quan hệ
-    owner = relationship("User", back_populates="accounts")
+    user = relationship("User", back_populates="accounts")
     transactions = relationship("Transaction", back_populates="account")
 
 
@@ -57,7 +57,7 @@ class Category(Base):
     icon = Column(String, nullable=True)
     color = Column(String, nullable=True)
 
-    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     
     # Audit fields
     created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
@@ -65,7 +65,7 @@ class Category(Base):
     deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
 
     # Quan hệ
-    owner = relationship("User", back_populates="categories")
+    user = relationship("User", back_populates="categories")
     transactions = relationship("Transaction", back_populates="category")
 
 
@@ -80,7 +80,7 @@ class Transaction(Base):
     note = Column(String, nullable=True)
 
     # Khóa ngoại
-    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True) # có thể null nếu là chuyển tiền
 
@@ -90,6 +90,6 @@ class Transaction(Base):
     deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
 
     # Quan hệ
-    owner = relationship("User", back_populates="transactions")
+    user = relationship("User", back_populates="transactions")
     account = relationship("Account", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")

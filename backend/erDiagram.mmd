@@ -8,29 +8,44 @@ erDiagram
     USERS {
         UUID id PK
         VARCHAR email
-        VARCHAR password_hash
+        VARCHAR hashed_password
+        VARCHAR full_name
+        BOOLEAN is_active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        TIMESTAMP deleted_at
     }
     ACCOUNTS {
         UUID id PK
-        UUID user_id FK
         VARCHAR name
+        VARCHAR type
         NUMERIC balance
+        UUID user_id FK
+        TIMESTAMP created_at
         TIMESTAMP updated_at
+        TIMESTAMP deleted_at
     }
     CATEGORIES {
         UUID id PK
-        UUID user_id FK
         VARCHAR name
         VARCHAR type
+        VARCHAR icon
+        VARCHAR color
+        UUID user_id FK
+        TIMESTAMP created_at
         TIMESTAMP updated_at
+        TIMESTAMP deleted_at
     }
     TRANSACTIONS {
         UUID id PK
+        NUMERIC amount
+        VARCHAR type
+        TIMESTAMP date
+        TEXT note
         UUID user_id FK
         UUID account_id FK
         UUID category_id FK
-        NUMERIC amount
-        TIMESTAMP date
-        TEXT note
+        TIMESTAMP created_at
         TIMESTAMP updated_at
+        TIMESTAMP deleted_at
     }
