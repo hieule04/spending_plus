@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "../service/api";
+import ConfirmModal from "./ConfirmModal";
 
 interface Category {
   id: string;
@@ -17,6 +18,9 @@ export default function CategoriesTab() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // Deletion modal state
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -79,15 +83,21 @@ export default function CategoriesTab() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc muốn xoá danh mục này?")) return;
+  const handleDelete = (id: string) => {
+    setConfirmDelete(id);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDelete) return;
     setMessage(null);
     try {
-      await deleteCategory(id);
+      await deleteCategory(confirmDelete);
       setMessage({ text: "Đã xoá danh mục.", type: "success" });
       fetchCategories();
     } catch (err: any) {
       setMessage({ text: err.message, type: "error" });
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -196,6 +206,14 @@ export default function CategoriesTab() {
           ))}
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={!!confirmDelete}
+        title="Xác nhận xoá danh mục"
+        message="Bạn có chắc chắn muốn xoá danh mục này không? Hành động này sẽ không thể hoàn tác."
+        onConfirm={confirmDeleteAction}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

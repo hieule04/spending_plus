@@ -3,6 +3,7 @@ import {
   listTransactions, createTransaction, updateTransaction, deleteTransaction,
   listAccounts, listCategories,
 } from "../service/api";
+import ConfirmModal from "./ConfirmModal";
 
 interface Transaction {
   id: string;
@@ -23,6 +24,9 @@ export default function TransactionsTab() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // Deletion modal state
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -109,15 +113,21 @@ export default function TransactionsTab() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc muốn xoá giao dịch này? Số dư tài khoản sẽ được hoàn lại.")) return;
+  const handleDelete = (id: string) => {
+    setConfirmDelete(id);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDelete) return;
     setMessage(null);
     try {
-      await deleteTransaction(id);
+      await deleteTransaction(confirmDelete);
       setMessage({ text: "Đã xoá giao dịch.", type: "success" });
       fetchData();
     } catch (err: any) {
       setMessage({ text: err.message, type: "error" });
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -272,6 +282,14 @@ export default function TransactionsTab() {
           </table>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={!!confirmDelete}
+        title="Xác nhận xoá giao dịch"
+        message="Bạn có chắc chắn muốn xoá giao dịch này không? Số dư tài khoản sẽ được tính toán lại."
+        onConfirm={confirmDeleteAction}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

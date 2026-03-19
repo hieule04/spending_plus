@@ -5,9 +5,10 @@ import { getProfile } from "../service/api";
 
 interface TopBarProps {
   onLogout: () => void;
+  direction?: 'up' | 'down';
 }
 
-export default function TopBar({ onLogout }: TopBarProps) {
+export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSystem, setShowSystem] = useState(false);
@@ -76,7 +77,7 @@ export default function TopBar({ onLogout }: TopBarProps) {
 
   return (
     <>
-      <div className="absolute top-6 right-6 z-40" ref={dropdownRef}>
+      <div className="relative z-40" ref={dropdownRef}>
         <button 
           onClick={() => setDropdownOpen(!dropdownOpen)}
           className="w-12 h-12 rounded-full border-2 border-blue-500/50 hover:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/20 shadow-lg shadow-blue-500/10 overflow-hidden bg-slate-200 dark:bg-slate-700 transition-all active:scale-95"
@@ -90,7 +91,7 @@ export default function TopBar({ onLogout }: TopBarProps) {
 
         {/* Dropdown Menu */}
         {dropdownOpen && (
-          <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 animate-fade-in origin-top-right">
+          <div className={`absolute ${direction === 'up' ? 'bottom-full origin-bottom mb-3' : 'top-full origin-top mt-3'} left-1/2 -translate-x-1/2 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 animate-fade-in`}>
             <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
               <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Tài khoản</p>
             </div>

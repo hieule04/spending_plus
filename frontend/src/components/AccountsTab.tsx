@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { listAccounts, createAccount, updateAccount, deleteAccount } from "../service/api";
+import ConfirmModal from "./ConfirmModal";
 
 interface Account {
   id: string;
@@ -13,6 +14,9 @@ export default function AccountsTab() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // Deletion modal state
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -71,15 +75,21 @@ export default function AccountsTab() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc muốn xoá tài khoản này?")) return;
+  const handleDelete = (id: string) => {
+    setConfirmDelete(id);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDelete) return;
     setMessage(null);
     try {
-      await deleteAccount(id);
+      await deleteAccount(confirmDelete);
       setMessage({ text: "Đã xoá tài khoản.", type: "success" });
       fetchAccounts();
     } catch (err: any) {
       setMessage({ text: err.message, type: "error" });
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -185,6 +195,14 @@ export default function AccountsTab() {
           </table>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={!!confirmDelete}
+        title="Xác nhận xoá tài khoản"
+        message="Bạn có chắc chắn muốn xoá tài khoản này không? Hành động này sẽ hoàn trả số dư nhưng không thể hoàn tác."
+        onConfirm={confirmDeleteAction}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

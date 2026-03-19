@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react"
-import { api } from "./service/api"
 import RegisterForm from "./components/RegisterForm"
 import LoginForm from "./components/LoginForm"
 import AccountsTab from "./components/AccountsTab"
@@ -49,9 +48,8 @@ function App() {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white flex flex-col items-center justify-center p-4 py-8 font-sans transition-colors duration-300 ease-in-out">
-        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 text-center relative">
-          
+      <div className="h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 text-center relative animate-fade-in">
           <header className={`mb-8 ${authMode !== 'none' ? 'opacity-80 scale-95 transition-all' : 'transition-all scale-100'}`}>
             <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent mb-4 tracking-tight">
               Spending Plus
@@ -78,7 +76,7 @@ function App() {
             )}
 
             {authMode === 'login' && (
-              <div className="w-full">
+              <div className="w-full animate-fade-in">
                 <LoginForm />
                 <button
                   onClick={() => setAuthMode('none')}
@@ -90,7 +88,7 @@ function App() {
             )}
 
             {authMode === 'register' && (
-              <div className="w-full">
+              <div className="w-full animate-fade-in">
                 <RegisterForm />
                 <button
                   onClick={() => setAuthMode('none')}
@@ -111,56 +109,89 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white flex flex-col items-center p-4 py-8 font-sans transition-colors duration-300 ease-in-out relative">
-      <TopBar onLogout={handleLogout} />
+    <div className="h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white flex flex-col items-center font-sans transition-colors duration-300 ease-in-out overflow-hidden">
+     <div className="w-full max-w-[1600px] h-full flex flex-col md:flex-row relative gap-4 p-4 sm:p-6 lg:p-8">
       
-      <div className="max-w-6xl w-full bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-700 relative mt-16 sm:mt-0">
-        <header className="mb-8 text-center sm:text-left">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent mb-2">
-            Spending Plus
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Hệ thống quản lý chi tiêu thông minh</p>
-        </header>
+      {/* Mobile Top Header (Visible only on md-) */}
+      <header className="md:hidden flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl px-5 py-4 flex items-center justify-between z-30 shadow-sm relative">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <span className="text-white text-xl font-black">S+</span>
+          </div>
+          <h1 className="text-xl font-black bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent pb-1">Spending Plus</h1>
+        </div>
+        <div className="relative">
+          <TopBar onLogout={handleLogout} direction="down" />
+        </div>
+      </header>
 
-        {/* Tab Navigation */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-100 dark:bg-slate-900/60 p-2 rounded-2xl mb-8 border border-slate-200 dark:border-slate-700/50">
+      {/* Mobile Nav Navigation (Visible only on md-) */}
+      <div className="md:hidden flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 z-30 shadow-sm relative">
+        <div className="grid grid-cols-4 gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-3 px-2 text-sm font-bold rounded-xl transition-all duration-200 ease-in-out flex flex-col sm:flex-row items-center justify-center gap-2 ${
+              className={`py-2.5 px-1 text-xs font-bold rounded-xl transition-all flex flex-col items-center justify-center gap-1 ${
                 activeTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 transform scale-[1.02]'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700/50'
+                  ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
-              <span className="text-xl">{tab.icon}</span>
-              <span>{tab.label}</span>
+              <span className="truncate">{tab.label}</span>
             </button>
           ))}
         </div>
-
-        <main className="min-h-[400px]">
-          {/* TAB: Tổng quan */}
-          {activeTab === 'system' && (
-            <div className="animate-fade-in"><DashboardTab /></div>
-          )}
-
-          {/* TAB: Giao dịch */}
-          {activeTab === 'transactions' && <div className="animate-fade-in"><TransactionsTab /></div>}
-
-          {/* TAB: Ví của tôi */}
-          {activeTab === 'accounts' && <div className="animate-fade-in"><AccountsTab /></div>}
-
-          {/* TAB: Danh mục */}
-          {activeTab === 'categories' && <div className="animate-fade-in"><CategoriesTab /></div>}
-
-        </main>
-
-        <footer className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-700 text-center text-slate-500 font-medium text-sm">
-          Spending Plus &bull; Built with FastAPI, React, and Supabase
-        </footer>
       </div>
+
+      {/* Desktop Left Sidebar (Visible only on md+) */}
+      <aside className="hidden md:flex w-64 flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm flex-col p-6 z-30 relative">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <span className="text-white text-xl font-black">S+</span>
+          </div>
+          <div>
+            <h1 className="text-xl font-black bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent pb-1 leading-none tracking-tight">
+              Spending Plus
+            </h1>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1.5">Finance App</p>
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full text-left px-5 py-3.5 text-sm font-bold rounded-2xl transition-all ${
+                activeTab === tab.id
+                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-800/50'
+                  : 'bg-transparent text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Bottom TopBar (User Profile Area) */}
+        <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-700 flex justify-center">
+          <TopBar onLogout={handleLogout} direction="up" />
+        </div>
+      </aside>
+
+      {/* Main Content Pane */}
+      <main className="flex-1 overflow-auto bg-white/50 dark:bg-slate-800/30 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-inner flex flex-col relative z-20">
+        <div className="flex-1 relative overflow-auto p-4 sm:p-6 lg:p-8">
+          <div className="animate-fade-in h-full">
+            {activeTab === 'system' && <DashboardTab />}
+            {activeTab === 'transactions' && <TransactionsTab />}
+            {activeTab === 'accounts' && <AccountsTab />}
+            {activeTab === 'categories' && <CategoriesTab />}
+          </div>
+        </div>
+      </main>
+     </div>
     </div>
   )
 }

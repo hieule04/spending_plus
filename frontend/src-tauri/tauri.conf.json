@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "frontend",
+  "productName": "Spending Plus",
   "version": "0.1.0",
   "identifier": "com.tauri.dev",
 
@@ -14,8 +14,8 @@
   "app": {
     "windows": [
       {
-        "title": "frontend",
-        "width": 800,
+        "title": "Spending Plus",
+        "width": 1280,
         "height": 600,
         "resizable": true,
         "fullscreen": false
