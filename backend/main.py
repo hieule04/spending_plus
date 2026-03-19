@@ -20,7 +20,7 @@ from app.database import get_db, engine
 from app import models
 
 # Import tất cả các routers
-from app.api import auth, accounts, categories, transactions, stats, users
+from app.api import auth, accounts, categories, transactions, users, budgets, stats
 
 # ==========================================
 # 1. KHỞI TẠO APP
@@ -58,13 +58,14 @@ async def log_origin(request: Request, call_next):
 # ==========================================
 # 3. INCLUDE ROUTERS
 # ==========================================
-
-app.include_router(auth.router)              # /register, /login
-app.include_router(accounts.router)          # /accounts/
-app.include_router(categories.router)        # /categories/
-app.include_router(transactions.router)      # /transactions/
-app.include_router(stats.router)             # /stats/
-app.include_router(users.router)             # /users/
+# Đăng ký các router (API endpoints)
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
+app.include_router(users.router, prefix="/api")
+app.include_router(accounts.router, prefix="/api")
+app.include_router(categories.router, prefix="/api")
+app.include_router(transactions.router, prefix="/api")
+app.include_router(stats.router, prefix="/api")
+app.include_router(budgets.router, prefix="/api/budgets", tags=["Budgets"])
 
 
 # ==========================================

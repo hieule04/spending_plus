@@ -39,7 +39,7 @@ const handleApiError = (error: unknown, defaultMessage: string): never => {
 
 export const registerUser = async (data: { email: string; password: string }) => {
   try {
-    const response = await api.post("/register", data);
+    const response = await api.post("/api/auth/register", data);
     return response.data;
   } catch (error) {
     handleApiError(error, "Đăng ký thất bại. Vui lòng thử lại sau.");
@@ -48,7 +48,7 @@ export const registerUser = async (data: { email: string; password: string }) =>
 
 export const loginUser = async (data: { email: string; password: string }) => {
   try {
-    const response = await api.post("/login", data);
+    const response = await api.post("/api/auth/login", data);
     return response.data;
   } catch (error) {
     handleApiError(error, "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
@@ -61,7 +61,7 @@ export const loginUser = async (data: { email: string; password: string }) => {
 
 export const listAccounts = async () => {
   try {
-    const response = await api.get("/accounts/");
+    const response = await api.get("/api/accounts/");
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể tải danh sách tài khoản.");
@@ -70,7 +70,7 @@ export const listAccounts = async () => {
 
 export const createAccount = async (data: { name: string; type: string; balance?: number }) => {
   try {
-    const response = await api.post("/accounts/", data);
+    const response = await api.post("/api/accounts/", data);
     return response.data;
   } catch (error) {
     handleApiError(error, "Tạo tài khoản thất bại.");
@@ -79,7 +79,7 @@ export const createAccount = async (data: { name: string; type: string; balance?
 
 export const updateAccount = async (id: string, data: { name?: string; type?: string; balance?: number }) => {
   try {
-    const response = await api.put(`/accounts/${id}`, data);
+    const response = await api.put(`/api/accounts/${id}`, data);
     return response.data;
   } catch (error) {
     handleApiError(error, "Cập nhật tài khoản thất bại.");
@@ -88,7 +88,7 @@ export const updateAccount = async (id: string, data: { name?: string; type?: st
 
 export const deleteAccount = async (id: string) => {
   try {
-    const response = await api.delete(`/accounts/${id}`);
+    const response = await api.delete(`/api/accounts/${id}`);
     return response.data;
   } catch (error) {
     handleApiError(error, "Xoá tài khoản thất bại.");
@@ -101,7 +101,7 @@ export const deleteAccount = async (id: string) => {
 
 export const listCategories = async () => {
   try {
-    const response = await api.get("/categories/");
+    const response = await api.get("/api/categories/");
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể tải danh sách danh mục.");
@@ -110,7 +110,7 @@ export const listCategories = async () => {
 
 export const createCategory = async (data: { name: string; type: string; icon?: string; color?: string }) => {
   try {
-    const response = await api.post("/categories/", data);
+    const response = await api.post("/api/categories/", data);
     return response.data;
   } catch (error) {
     handleApiError(error, "Tạo danh mục thất bại.");
@@ -119,7 +119,7 @@ export const createCategory = async (data: { name: string; type: string; icon?: 
 
 export const updateCategory = async (id: string, data: { name?: string; type?: string; icon?: string; color?: string }) => {
   try {
-    const response = await api.put(`/categories/${id}`, data);
+    const response = await api.put(`/api/categories/${id}`, data);
     return response.data;
   } catch (error) {
     handleApiError(error, "Cập nhật danh mục thất bại.");
@@ -128,7 +128,7 @@ export const updateCategory = async (id: string, data: { name?: string; type?: s
 
 export const deleteCategory = async (id: string) => {
   try {
-    const response = await api.delete(`/categories/${id}`);
+    const response = await api.delete(`/api/categories/${id}`);
     return response.data;
   } catch (error) {
     handleApiError(error, "Xoá danh mục thất bại.");
@@ -141,7 +141,7 @@ export const deleteCategory = async (id: string) => {
 
 export const listTransactions = async () => {
   try {
-    const response = await api.get("/transactions/");
+    const response = await api.get("/api/transactions/");
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể tải danh sách giao dịch.");
@@ -157,7 +157,7 @@ export const createTransaction = async (data: {
   category_id?: string;
 }) => {
   try {
-    const response = await api.post("/transactions/", data);
+    const response = await api.post("/api/transactions/", data);
     window.dispatchEvent(new Event("refresh_transactions"));
     return response.data;
   } catch (error) {
@@ -174,7 +174,7 @@ export const updateTransaction = async (id: string, data: {
   category_id?: string;
 }) => {
   try {
-    const response = await api.put(`/transactions/${id}`, data);
+    const response = await api.put(`/api/transactions/${id}`, data);
     window.dispatchEvent(new Event("refresh_transactions"));
     return response.data;
   } catch (error) {
@@ -184,7 +184,7 @@ export const updateTransaction = async (id: string, data: {
 
 export const deleteTransaction = async (id: string) => {
   try {
-    const response = await api.delete(`/transactions/${id}`);
+    const response = await api.delete(`/api/transactions/${id}`);
     window.dispatchEvent(new Event("refresh_transactions"));
     return response.data;
   } catch (error) {
@@ -198,7 +198,7 @@ export const deleteTransaction = async (id: string) => {
 
 export const getSummaryStats = async (period: string = "month") => {
   try {
-    const response = await api.get(`/stats/summary?period=${period}`);
+    const response = await api.get(`/api/stats/summary?period=${period}`);
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể tải dữ liệu thống kê.");
@@ -211,7 +211,7 @@ export const getSummaryStats = async (period: string = "month") => {
 
 export const getProfile = async () => {
   try {
-    const response = await api.get("/users/me");
+    const response = await api.get("/api/users/me");
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể tải thông tin hồ sơ.");
@@ -220,10 +220,33 @@ export const getProfile = async () => {
 
 export const updateProfile = async (data: { full_name?: string; email?: string; password?: string; avatar_url?: string }) => {
   try {
-    const response = await api.put("/users/me", data);
+    const response = await api.put("/api/users/me", data);
     window.dispatchEvent(new Event("profile_updated"));
     return response.data;
   } catch (error) {
     handleApiError(error, "Cập nhật hồ sơ thất bại.");
+  }
+};
+
+// ==========================================
+// 7. Ngân Sách (Budgets)
+// ==========================================
+
+export const getBudgetReport = async (month: number, year: number) => {
+  try {
+    const response = await api.get(`/api/budgets/report?month=${month}&year=${year}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Không thể tải báo cáo ngân sách.");
+  }
+};
+
+export const upsertBudget = async (data: { amount_limit: number; month: number; year: number; category_id: string }) => {
+  try {
+    const response = await api.post("/api/budgets/", data);
+    window.dispatchEvent(new Event("refresh_budgets"));
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Cập nhật ngân sách thất bại.");
   }
 };

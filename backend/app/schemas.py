@@ -143,3 +143,45 @@ class TransactionResponse(TransactionBase):
     created_at: datetime
     updated_at: datetime
     model_config = model_config
+
+
+# ==========================================
+# 5. Budget Schemas
+# ==========================================
+
+class BudgetBase(BaseModel):
+    amount_limit: Decimal
+    month: int = Field(..., ge=1, le=12, description="Tháng (1-12)")
+    year: int = Field(..., ge=2000, description="Năm")
+    category_id: UUID
+
+
+class BudgetCreate(BudgetBase):
+    pass
+
+
+class BudgetUpdate(BaseModel):
+    amount_limit: Optional[Decimal] = None
+    month: Optional[int] = Field(None, ge=1, le=12)
+    year: Optional[int] = Field(None, ge=2000)
+    category_id: Optional[UUID] = None
+
+
+class BudgetResponse(BudgetBase):
+    id: UUID
+    user_id: UUID
+    created_at: datetime
+    updated_at: datetime
+    model_config = model_config
+
+
+class BudgetReportResponse(BaseModel):
+    category_id: UUID
+    category_name: str
+    amount_limit: Decimal
+    total_spent: Decimal
+    remaining: Decimal
+    percentage: float
+    month: int
+    year: int
+    model_config = model_config

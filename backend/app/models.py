@@ -6,7 +6,7 @@ Các bảng: User, Account, Category, Transaction.
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Numeric, Boolean, ForeignKey
+from sqlalchemy import Column, String, Numeric, Boolean, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy.orm import relationship
 
@@ -31,6 +31,7 @@ class User(Base):
     accounts = relationship("Account", back_populates="user")
     categories = relationship("Category", back_populates="user")
     transactions = relationship("Transaction", back_populates="user")
+    budgets = relationship("Budget", back_populates="user")
 
 
 class Account(Base):
@@ -70,6 +71,31 @@ class Category(Base):
 
     user = relationship("User", back_populates="categories")
     transactions = relationship("Transaction", back_populates="category")
+    budgets = relationship("Budget", back_populates="category")
+
+
+class Budget(Base):
+    """Bảng giới hạn ngân sách theo tháng/năm."""
+    __tablename__ = "budgets"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    amount_limit = Column(Numeric(15, 2), nullable=False)
+    month = Column(Integer, nullable=False)
+    year = Column(Integer, nullable=False)
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=False)
+
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+    updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'category_id', 'month', 'year', name='uix_user_category_month_year'),
+    )
+
+    user = relationship("User", back_populates="budgets")
+    category = relationship("Category", back_populates="budgets")
 
 
 class Transaction(Base):

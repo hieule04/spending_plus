@@ -5,30 +5,39 @@ import AccountsTab from "./components/AccountsTab"
 import CategoriesTab from "./components/CategoriesTab"
 import TransactionsTab from "./components/TransactionsTab"
 import DashboardTab from "./components/DashboardTab"
+import BudgetsTab from "./components/BudgetsTab"
 import TopBar from "./components/TopBar"
 import "./App.css"
 
-type TabType = 'system' | 'transactions' | 'accounts' | 'categories';
+type TabType = 'system' | 'transactions' | 'accounts' | 'categories' | 'budgets';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'none' | 'login' | 'register'>('none');
   const [activeTab, setActiveTab] = useState<TabType>('system');
+  const [isGlass, setIsGlass] = useState(false);
   
   useEffect(() => {
-    // Auth logic
     const checkAuth = () => {
       const token = localStorage.getItem("access_token");
       setIsLoggedIn(!!token);
     };
     checkAuth();
 
+    const checkTheme = () => {
+      const t = localStorage.getItem("app-theme");
+      setIsGlass(t === 'glass');
+    };
+    checkTheme();
+
     window.addEventListener("user_login", checkAuth);
     window.addEventListener("user_logout", checkAuth);
+    window.addEventListener("theme_changed", checkTheme);
 
     return () => {
       window.removeEventListener("user_login", checkAuth);
       window.removeEventListener("user_logout", checkAuth);
+      window.removeEventListener("theme_changed", checkTheme);
     };
   }, [])
 
@@ -39,22 +48,31 @@ function App() {
     setAuthMode('none');
   };
 
-  const tabs: { id: TabType; label: string; icon: string }[] = [
-    { id: 'system',       label: 'Tổng quan',    icon: '📊' },
-    { id: 'transactions', label: 'Giao dịch',   icon: '📝' },
-    { id: 'accounts',     label: 'Ví',           icon: '💰' },
-    { id: 'categories',   label: 'Danh mục',     icon: '📁' },
+  const tabs: { id: TabType; label: string }[] = [
+    { id: 'system',       label: 'Tổng quan' },
+    { id: 'transactions', label: 'Giao dịch' },
+    { id: 'budgets',      label: 'Ngân sách' },
+    { id: 'accounts',     label: 'Ví' },
+    { id: 'categories',   label: 'Danh mục' },
   ];
 
   if (!isLoggedIn) {
     return (
-      <div className="h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out">
-        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700 text-center relative animate-fade-in">
+      <div className={`h-screen flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out ${
+        isGlass 
+          ? 'glass-bg text-white' 
+          : 'bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white'
+      }`}>
+        <div className={`max-w-md w-full rounded-3xl shadow-2xl p-8 text-center relative animate-fade-in ${
+          isGlass
+            ? 'glass-panel'
+            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
+        }`}>
           <header className={`mb-8 ${authMode !== 'none' ? 'opacity-80 scale-95 transition-all' : 'transition-all scale-100'}`}>
-            <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent mb-4 tracking-tight">
+            <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent pb-2 mb-2 tracking-tight leading-[1.2]">
               Spending Plus
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-lg font-medium">Quản lý tài chính thông minh</p>
+            <p className={`text-lg font-medium ${isGlass ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>Quản lý tài chính thông minh</p>
           </header>
 
           <div className="min-h-[250px] flex flex-col justify-center">
@@ -68,7 +86,11 @@ function App() {
                 </button>
                 <button
                   onClick={() => setAuthMode('register')}
-                  className="w-full py-3.5 px-6 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white rounded-xl font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] text-lg"
+                  className={`w-full py-3.5 px-6 rounded-xl font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] text-lg ${
+                    isGlass
+                      ? 'glass-btn'
+                      : 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white'
+                  }`}
                 >
                   Đăng ký
                 </button>
@@ -80,7 +102,9 @@ function App() {
                 <LoginForm />
                 <button
                   onClick={() => setAuthMode('none')}
-                  className="mt-6 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors text-sm font-medium flex items-center justify-center gap-2 mx-auto"
+                  className={`mt-6 transition-colors text-sm font-medium flex items-center justify-center gap-2 mx-auto ${
+                    isGlass ? 'text-white drop-shadow-md hover:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                  }`}
                 >
                   &larr; Quay lại
                 </button>
@@ -92,7 +116,9 @@ function App() {
                 <RegisterForm />
                 <button
                   onClick={() => setAuthMode('none')}
-                  className="mt-6 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors text-sm font-medium flex items-center justify-center gap-2 mx-auto"
+                  className={`mt-6 transition-colors text-sm font-medium flex items-center justify-center gap-2 mx-auto ${
+                    isGlass ? 'text-white drop-shadow-md hover:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                  }`}
                 >
                   &larr; Quay lại
                 </button>
@@ -101,7 +127,7 @@ function App() {
           </div>
         </div>
         
-        <footer className="mt-8 text-center text-slate-500 dark:text-slate-500 text-sm font-medium">
+        <footer className={`mt-8 text-center text-sm font-medium ${isGlass ? 'text-white' : 'text-slate-600 dark:text-slate-500'}`}>
           Spending Plus &bull; Built with FastAPI, React, and Supabase
         </footer>
       </div>
@@ -109,52 +135,72 @@ function App() {
   }
 
   return (
-    <div className="h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white flex flex-col items-center font-sans transition-colors duration-300 ease-in-out overflow-hidden">
+    <div className={`h-screen flex flex-col items-center font-sans transition-colors duration-300 ease-in-out overflow-hidden ${
+      isGlass
+        ? 'glass-bg text-white'
+        : 'bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white'
+    }`}>
      <div className="w-full max-w-[1600px] h-full flex flex-col md:flex-row relative gap-4 p-4 sm:p-6 lg:p-8">
       
-      {/* Mobile Top Header (Visible only on md-) */}
-      <header className="md:hidden flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl px-5 py-4 flex items-center justify-between z-30 shadow-sm relative">
+      {/* Mobile Top Header */}
+      <header className={`md:hidden flex-none rounded-3xl px-5 py-4 flex items-center justify-between z-30 shadow-sm relative ${
+        isGlass
+          ? 'glass-panel'
+          : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
+      }`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${
+            isGlass ? 'bg-white/10 shadow-white/5' : 'bg-blue-600 shadow-blue-500/20'
+          }`}>
             <span className="text-white text-xl font-black">S+</span>
           </div>
-          <h1 className="text-xl font-black bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent pb-1">Spending Plus</h1>
+          <h1 className="text-xl font-black bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent pb-1">Spending Plus</h1>
         </div>
         <div className="relative">
           <TopBar onLogout={handleLogout} direction="down" />
         </div>
       </header>
 
-      {/* Mobile Nav Navigation (Visible only on md-) */}
-      <div className="md:hidden flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-2 z-30 shadow-sm relative">
-        <div className="grid grid-cols-4 gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2.5 px-1 text-xs font-bold rounded-xl transition-all flex flex-col items-center justify-center gap-1 ${
-                activeTab === tab.id
-                  ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-              }`}
-            >
-              <span className="truncate">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+          {/* Mobile Navigation Footer (Sticky) */}
+          <div className={`md:hidden flex items-center justify-around p-3 border-t shrink-0 ${
+            isGlass ? 'glass-panel' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 px-2'
+          }`}>
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`p-2 rounded-xl transition-all ${
+                  activeTab === tab.id
+                    ? isGlass ? 'bg-white/20 text-white shadow-[0_2px_8px_rgba(255,255,255,0.2)]' : 'bg-blue-100 dark:bg-blue-600 text-blue-700 dark:text-white'
+                    : isGlass ? 'text-white' : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                <div className="text-[10px] font-bold uppercase">{tab.label.substring(0, 3)}</div>
+              </button>
+            ))}
+          </div>
 
-      {/* Desktop Left Sidebar (Visible only on md+) */}
-      <aside className="hidden md:flex w-64 flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm flex-col p-6 z-30 relative">
+      {/* Desktop Left Sidebar */}
+      <aside className={`hidden md:flex w-64 flex-none rounded-3xl shadow-sm flex-col p-6 z-30 relative ${
+        isGlass
+          ? 'glass-panel'
+          : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
+      }`}>
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${
+            isGlass ? 'bg-white/10 shadow-white/5' : 'bg-blue-600 shadow-blue-500/20'
+          }`}>
             <span className="text-white text-xl font-black">S+</span>
           </div>
           <div>
-            <h1 className="text-xl font-black bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent pb-1 leading-none tracking-tight">
+            <h1 className={`text-xl font-black bg-gradient-to-r bg-clip-text text-transparent pb-1 leading-none tracking-tight ${
+              isGlass ? 'from-blue-300 to-cyan-300' : 'from-blue-600 to-emerald-500'
+            }`}>
               Spending Plus
             </h1>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1.5">Finance App</p>
+            <p className={`text-[10px] font-bold uppercase tracking-widest mt-1.5 ${
+              isGlass ? 'text-white' : 'text-slate-600 dark:text-slate-500'
+            }`}>Finance App</p>
           </div>
         </div>
 
@@ -164,9 +210,11 @@ function App() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`w-full text-left px-5 py-3.5 text-sm font-bold rounded-2xl transition-all ${
-                activeTab === tab.id
-                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-800/50'
-                  : 'bg-transparent text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                isGlass
+                  ? (activeTab === tab.id ? 'glass-nav-active' : 'glass-nav-inactive')
+                  : (activeTab === tab.id
+                    ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-800/50'
+                    : 'bg-transparent text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200')
               }`}
             >
               {tab.label}
@@ -174,18 +222,25 @@ function App() {
           ))}
         </nav>
 
-        {/* Bottom TopBar (User Profile Area) */}
-        <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-700 flex justify-center">
+        {/* Bottom TopBar */}
+        <div className={`pt-6 mt-6 border-t flex justify-center ${
+          isGlass ? 'border-white/10' : 'border-slate-100 dark:border-slate-700'
+        }`}>
           <TopBar onLogout={handleLogout} direction="up" />
         </div>
       </aside>
 
       {/* Main Content Pane */}
-      <main className="flex-1 overflow-auto bg-white/50 dark:bg-slate-800/30 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-inner flex flex-col relative z-20">
+      <main className={`flex-1 overflow-auto rounded-3xl shadow-inner flex flex-col relative z-20 ${
+        isGlass
+          ? 'glass-card !shadow-none'
+          : 'bg-white/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/50'
+      }`}>
         <div className="flex-1 relative overflow-auto p-4 sm:p-6 lg:p-8">
           <div className="animate-fade-in h-full">
             {activeTab === 'system' && <DashboardTab />}
             {activeTab === 'transactions' && <TransactionsTab />}
+            {activeTab === 'budgets' && <BudgetsTab />}
             {activeTab === 'accounts' && <AccountsTab />}
             {activeTab === 'categories' && <CategoriesTab />}
           </div>
