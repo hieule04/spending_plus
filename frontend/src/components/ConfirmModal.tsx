@@ -1,4 +1,5 @@
 import { useGlassTheme } from "../hooks/useGlassTheme";
+import { useLanguage } from "../context/LanguageContext";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -10,9 +11,13 @@ interface ConfirmModalProps {
   cancelText?: string;
 }
 
-export default function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, confirmText = "Xoá", cancelText = "Huỷ" }: ConfirmModalProps) {
+export default function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, confirmText, cancelText }: ConfirmModalProps) {
   const isGlass = useGlassTheme();
+  const { t } = useLanguage();
   if (!isOpen) return null;
+
+  const finalConfirmText = confirmText || t('common.delete');
+  const finalCancelText = cancelText || t('common.cancel');
 
   return (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in ${
@@ -33,8 +38,8 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
         <div className="flex gap-3">
           <button onClick={onCancel} className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all active:scale-95 ${
             isGlass ? 'glass-btn' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200'
-          }`}>{cancelText}</button>
-          <button onClick={onConfirm} className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/30 transition-all active:scale-95">{confirmText}</button>
+          }`}>{finalCancelText}</button>
+          <button onClick={onConfirm} className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/30 transition-all active:scale-95">{finalConfirmText}</button>
         </div>
       </div>
     </div>

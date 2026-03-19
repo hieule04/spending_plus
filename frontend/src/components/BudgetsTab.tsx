@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { getBudgetReport, upsertBudget, listCategories } from "../service/api";
 import GlassSelect from "./GlassSelect";
 import { useGlassTheme } from "../hooks/useGlassTheme";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function BudgetsTab() {
   const isGlass = useGlassTheme();
+  const { t, language } = useLanguage();
   
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
@@ -75,8 +77,8 @@ export default function BudgetsTab() {
       {/* Header Area */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h2 className={`text-4xl font-extrabold tracking-tight ${textTitleClass}`}>Ngân Sách</h2>
-          <p className={`mt-2 ${textSubClass}`}>Quản lý chi tiêu cho từng danh mục</p>
+          <h2 className={`text-4xl font-extrabold tracking-tight ${textTitleClass}`}>{t('bg.title')}</h2>
+          <p className={`mt-2 ${textSubClass}`}>{t('bg.subtitle')}</p>
         </div>
         
         {/* Month/Year Filter */}
@@ -85,7 +87,7 @@ export default function BudgetsTab() {
             <GlassSelect 
               value={month} 
               onChange={(val) => setMonth(Number(val))}
-              options={Array.from({length: 12}, (_, i) => ({ label: `Tháng ${i + 1}`, value: i + 1 }))}
+              options={Array.from({length: 12}, (_, i) => ({ label: `${t('common.month')} ${i + 1}`, value: i + 1 }))}
             />
           </div>
           <div className="w-28">
@@ -99,10 +101,10 @@ export default function BudgetsTab() {
       </div>
 
       {loading ? (
-        <div className={`text-center py-20 font-bold ${textSubClass}`}>Đang tải dữ liệu...</div>
+        <div className={`text-center py-20 font-bold ${textSubClass}`}>{t('common.loading')}</div>
       ) : reports.length === 0 ? (
         <div className={`text-center py-20 rounded-3xl flex flex-col items-center justify-center ${gridCardClass}`}>
-          <p className={`text-lg font-bold mb-4 ${textTitleClass}`}>Chưa có ngân sách nào</p>
+          <p className={`text-lg font-bold mb-4 ${textTitleClass}`}>{t('bg.no_budgets')}</p>
           <button 
             onClick={handleOpenModal}
             className={`px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all hover:scale-105 active:scale-95 ${
@@ -110,7 +112,7 @@ export default function BudgetsTab() {
             }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-            Tạo Ngân Sách Đầu Tiên
+            {t('bg.add_first')}
           </button>
         </div>
       ) : (
@@ -145,7 +147,7 @@ export default function BudgetsTab() {
 
                 <div className="flex justify-between items-end mb-2">
                   <div className={`font-semibold ${textSubClass} text-sm`}>
-                    <span className={textTitleClass}>{report.total_spent.toLocaleString("vi-VN")}</span> / {report.amount_limit.toLocaleString("vi-VN")}đ
+                    <span className={textTitleClass}>{report.total_spent.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}</span> / {report.amount_limit.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ
                   </div>
                 </div>
 
@@ -160,8 +162,8 @@ export default function BudgetsTab() {
                 
                 <div className={`text-xs font-semibold text-right ${exceedLimit ? textAlertClass : textSubClass}`}>
                   {exceedLimit 
-                    ? `Vượt quá ${Math.abs(report.remaining).toLocaleString("vi-VN")}đ` 
-                    : `Trống ${report.remaining.toLocaleString("vi-VN")}đ`}
+                    ? `${t('bg.over')} ${Math.abs(report.remaining).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ` 
+                    : `${t('bg.remaining')} ${report.remaining.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ`}
                 </div>
               </div>
             );
@@ -176,7 +178,7 @@ export default function BudgetsTab() {
                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             </div>
             <span className={`font-bold tracking-wide ${isGlass ? "text-white group-hover:text-white" : "text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400"}`}>
-              Thêm Hạn Mức Mới
+              {t('bg.add_new')}
             </span>
           </button>
 
@@ -192,22 +194,22 @@ export default function BudgetsTab() {
               ? "glass-panel bg-white/10" 
               : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
           }`}>
-            <h3 className={`text-2xl font-black mb-6 ${textTitleClass}`}>Thiết Lập Ngân Sách</h3>
-            <p className={`text-sm mb-6 ${textSubClass}`}>Cho tháng {month}/{year}</p>
+            <h3 className={`text-2xl font-black mb-6 ${textTitleClass}`}>{t('bg.setup_title')}</h3>
+            <p className={`text-sm mb-6 ${textSubClass}`}>{t('bg.for_month')} {month}/{year}</p>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>Danh mục chi tiêu</label>
+                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('bg.form.select_cat')}</label>
                 <GlassSelect 
                   value={selectedCategory} 
                   onChange={(val) => setSelectedCategory(val)}
                   options={categories.map((c) => ({ label: c.name, value: c.id }))}
-                  placeholder="-- Chọn danh mục --"
+                  placeholder={t('bg.form.placeholder.select_cat')}
                 />
               </div>
 
               <div>
-                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>Hạn mức (VNĐ)</label>
+                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('bg.form.limit')} (VNĐ)</label>
                 <input 
                   type="number" 
                   required
@@ -218,7 +220,7 @@ export default function BudgetsTab() {
                   className={`w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all ${
                     isGlass ? "glass-input" : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   }`}
-                  placeholder="Ví dụ: 5000000"
+                  placeholder={t('bg.form.placeholder.limit')}
                 />
               </div>
 
@@ -230,7 +232,7 @@ export default function BudgetsTab() {
                     isGlass ? "bg-white/10 hover:bg-white/10 text-white" : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
                   }`}
                 >
-                  Hủy
+                  {t('common.cancel')}
                 </button>
                 <button 
                   type="submit" 
@@ -239,7 +241,7 @@ export default function BudgetsTab() {
                     isSubmitting ? "opacity-50 cursor-not-allowed" : ""
                   } ${isGlass ? "bg-blue-500/80 hover:bg-blue-500 shadow-blue-500/20" : "bg-blue-600 hover:bg-blue-500 shadow-blue-500/25"}`}
                 >
-                  {isSubmitting ? 'Đang lưu...' : 'Lưu lại'}
+                  {isSubmitting ? t('common.saving') : t('common.save')}
                 </button>
               </div>
             </form>

@@ -8,10 +8,12 @@ import DashboardTab from "./components/DashboardTab"
 import BudgetsTab from "./components/BudgetsTab"
 import TopBar from "./components/TopBar"
 import "./App.css"
+import { useLanguage } from "./context/LanguageContext"
 
-type TabType = 'system' | 'transactions' | 'accounts' | 'categories' | 'budgets';
+type TabType = 'system' | 'transactions' | 'accounts' | 'categories' | 'budgets' | 'info';
 
 function App() {
+  const { t, language } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'none' | 'login' | 'register'>('none');
   const [activeTab, setActiveTab] = useState<TabType>('system');
@@ -49,11 +51,12 @@ function App() {
   };
 
   const tabs: { id: TabType; label: string }[] = [
-    { id: 'system',       label: 'Tổng quan' },
-    { id: 'transactions', label: 'Giao dịch' },
-    { id: 'budgets',      label: 'Ngân sách' },
-    { id: 'accounts',     label: 'Ví' },
-    { id: 'categories',   label: 'Danh mục' },
+    { id: 'system',       label: t('nav.dashboard') },
+    { id: 'transactions', label: t('nav.transactions') },
+    { id: 'budgets',      label: t('nav.budgets') },
+    { id: 'accounts',     label: t('nav.accounts') },
+    { id: 'categories',   label: t('nav.categories') },
+    { id: 'info',         label: t('nav.info') },
   ];
 
   if (!isLoggedIn) {
@@ -72,7 +75,9 @@ function App() {
             <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent pb-2 mb-2 tracking-tight leading-[1.2]">
               Spending Plus
             </h1>
-            <p className={`text-lg font-medium ${isGlass ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>Quản lý tài chính thông minh</p>
+            <p className={`text-lg font-medium ${isGlass ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+              {language === 'vi' ? 'Quản lý tài chính thông minh' : 'Smart Finance Management'}
+            </p>
           </header>
 
           <div className="min-h-[250px] flex flex-col justify-center">
@@ -82,7 +87,7 @@ function App() {
                   onClick={() => setAuthMode('login')}
                   className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] text-lg"
                 >
-                  Đăng nhập
+                  {language === 'vi' ? 'Đăng nhập' : 'Login'}
                 </button>
                 <button
                   onClick={() => setAuthMode('register')}
@@ -92,7 +97,7 @@ function App() {
                       : 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white'
                   }`}
                 >
-                  Đăng ký
+                  {language === 'vi' ? 'Đăng ký' : 'Register'}
                 </button>
               </div>
             )}
@@ -106,7 +111,7 @@ function App() {
                     isGlass ? 'text-white drop-shadow-md hover:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
-                  &larr; Quay lại
+                  &larr; {t('common.back')}
                 </button>
               </div>
             )}
@@ -120,7 +125,7 @@ function App() {
                     isGlass ? 'text-white drop-shadow-md hover:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
-                  &larr; Quay lại
+                  &larr; {t('common.back')}
                 </button>
               </div>
             )}
@@ -243,6 +248,27 @@ function App() {
             {activeTab === 'budgets' && <BudgetsTab />}
             {activeTab === 'accounts' && <AccountsTab />}
             {activeTab === 'categories' && <CategoriesTab />}
+            {activeTab === 'info' && (
+              <div className="flex items-center justify-center h-full">
+                <div className={`p-10 rounded-[2.5rem] max-w-lg w-full text-center ${isGlass ? 'glass-card' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl'}`}>
+                  <div className={`w-20 h-20 rounded-3xl mx-auto mb-8 flex items-center justify-center text-4xl ${isGlass ? 'bg-white/10 shadow-lg' : 'bg-blue-600 text-white shadow-blue-500/20 shadow-xl'}`}>ℹ️</div>
+                  <h2 className={`text-3xl font-black mb-8 ${isGlass ? 'text-white drop-shadow-md' : 'text-slate-900 dark:text-white'}`}>{t('info.title')}</h2>
+                  <div className="space-y-6 text-left">
+                    <div className={`p-4 rounded-2xl ${isGlass ? 'bg-white/5 border border-white/10' : 'bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800'}`}>
+                      <p className={`text-sm uppercase tracking-widest font-bold mb-1 ${isGlass ? 'text-white/50' : 'text-slate-500'}`}>{t('info.author')}</p>
+                      <p className={`text-xl font-extrabold ${isGlass ? 'text-white' : 'text-slate-900 dark:text-white'}`}>Lê Minh Hiếu</p>
+                    </div>
+                    <div className={`p-4 rounded-2xl ${isGlass ? 'bg-white/5 border border-white/10' : 'bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800'}`}>
+                      <p className={`text-sm uppercase tracking-widest font-bold mb-1 ${isGlass ? 'text-white/50' : 'text-slate-500'}`}>{t('info.created')}</p>
+                      <p className={`text-xl font-extrabold ${isGlass ? 'text-white' : 'text-slate-900 dark:text-white'}`}>19/03/2026</p>
+                    </div>
+                  </div>
+                  <div className={`mt-10 text-xs font-bold uppercase tracking-tighter ${isGlass ? 'text-white/20' : 'text-slate-400'}`}>
+                    Spending Plus &copy; 2026 All Rights Reserved
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

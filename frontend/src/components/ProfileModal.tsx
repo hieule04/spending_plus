@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { getProfile, updateProfile } from "../service/api";
 import { useGlassTheme } from "../hooks/useGlassTheme";
+import { useLanguage } from "../context/LanguageContext";
 
 interface ProfileModalProps { onClose: () => void; }
 
 export default function ProfileModal({ onClose }: ProfileModalProps) {
+  const { t } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +26,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
     const updateData: any = { full_name: fullName, email, avatar_url: avatarUrl };
     if (password.trim() !== "") updateData.password = password;
     const data = await updateProfile(updateData);
-    if (data) { setMessage({ text: "Cập nhật hồ sơ thành công!", type: "success" }); setPassword(""); } else { setMessage({ text: "Có lỗi xảy ra khi cập nhật", type: "error" }); }
+    if (data) { setMessage({ text: t('profile.msg.update_success'), type: "success" }); setPassword(""); } else { setMessage({ text: t('profile.msg.update_error'), type: "error" }); }
     setSaving(false);
   };
 
@@ -52,7 +54,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
     <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in ${overlayClass}`}>
       <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${panelClass}`}>
         <div className={`p-6 border-b ${borderClass} flex items-center justify-between`}>
-          <h2 className={`text-xl font-bold ${headingClass}`}>Hồ sơ Của Tôi</h2>
+          <h2 className={`text-xl font-bold ${headingClass}`}>{t('profile.title')}</h2>
           <button onClick={onClose} className={`p-2 rounded-full transition-colors ${isGlass ? 'text-white hover:text-white bg-white/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-700/50'}`}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
@@ -72,18 +74,18 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                   )}
                 </div>
                 <label className="absolute inset-0 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                  <span className="text-xs font-semibold">Đổi ảnh</span>
+                  <span className="text-xs font-semibold">{t('profile.change_avatar')}</span>
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </label>
               </div>
             </div>
 
-            <div><label className={`block mb-1 ${labelClass}`}>Tên hiển thị</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} placeholder="Nguyễn Văn A" /></div>
-            <div><label className={`block mb-1 ${labelClass}`}>Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} /></div>
-            <div><label className={`block mb-1 ${labelClass}`}>Đổi mật khẩu (Để trống nếu không đổi)</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} placeholder="••••••••" /></div>
+            <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.full_name')}</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} placeholder={t('profile.form.placeholder.full_name')} /></div>
+            <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.email')}</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} /></div>
+            <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.password_help')}</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} placeholder="••••••••" /></div>
 
             <button type="submit" disabled={saving} className={`w-full py-3 px-4 rounded-xl text-white font-bold transition-transform shadow-lg ${saving ? "bg-blue-400 cursor-wait" : "bg-blue-600 hover:bg-blue-500 active:scale-[0.98] shadow-blue-500/30"}`}>
-              {saving ? "Đang lưu..." : "Lưu Thay Đổi"}
+              {saving ? t('common.saving') : t('profile.save_changes')}
             </button>
           </form>
         </div>

@@ -3,10 +3,12 @@ import { listAccounts, createAccount, updateAccount, deleteAccount } from "../se
 import ConfirmModal from "./ConfirmModal";
 import GlassSelect from "./GlassSelect";
 import { useGlassTheme } from "../hooks/useGlassTheme";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Account { id: string; name: string; type: string; balance: number; created_at: string; }
 
 export default function AccountsTab() {
+  const { t, language } = useLanguage();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -30,19 +32,24 @@ export default function AccountsTab() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setMessage(null);
     try {
-      if (editingId) { await updateAccount(editingId, { name: formName, type: formType, balance: parseFloat(formBalance) }); setMessage({ text: "Cập nhật tài khoản thành công!", type: "success" }); }
-      else { await createAccount({ name: formName, type: formType, balance: parseFloat(formBalance) }); setMessage({ text: "Tạo tài khoản thành công!", type: "success" }); }
+      if (editingId) { await updateAccount(editingId, { name: formName, type: formType, balance: parseFloat(formBalance) }); setMessage({ text: t('acc.msg.update_success'), type: "success" }); }
+      else { await createAccount({ name: formName, type: formType, balance: parseFloat(formBalance) }); setMessage({ text: t('acc.msg.create_success'), type: "success" }); }
       resetForm(); fetchAccounts();
     } catch (err: any) { setMessage({ text: err.message, type: "error" }); }
   };
 
-  const handleDelete = (id: string) => { setConfirmDelete(id); };
   const confirmDeleteAction = async () => {
     if (!confirmDelete) return; setMessage(null);
-    try { await deleteAccount(confirmDelete); setMessage({ text: "Đã xoá tài khoản.", type: "success" }); fetchAccounts(); } catch (err: any) { setMessage({ text: err.message, type: "error" }); } finally { setConfirmDelete(null); }
+    try { await deleteAccount(confirmDelete); setMessage({ text: t('acc.msg.delete_success'), type: "success" }); fetchAccounts(); } catch (err: any) { setMessage({ text: err.message, type: "error" }); } finally { setConfirmDelete(null); }
   };
 
-  const typeLabel: Record<string, string> = { cash: "💵 Tiền mặt", bank: "🏦 Ngân hàng", credit: "💳 Tín dụng", saving: "🐖 Tiết kiệm", "e-wallet": "📱 Ví điện tử" };
+  const typeLabel: Record<string, string> = { 
+    cash: t('acc.type.cash'), 
+    bank: t('acc.type.bank'), 
+    credit: t('acc.type.credit'), 
+    saving: t('acc.type.savings'), 
+    "e-wallet": t('acc.type.ewallet') 
+  };
 
   // Glass-aware classes
   const cardClass = isGlass ? 'glass-card' : 'bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-600 shadow-sm';
@@ -56,8 +63,8 @@ export default function AccountsTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className={`text-xl font-bold ${headingClass}`}>Ví của tôi</h2>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors text-sm">+ Thêm ví mới</button>
+        <h2 className={`text-xl font-bold ${headingClass}`}>{t('acc.title')}</h2>
+        <button onClick={() => { resetForm(); setShowForm(true); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors text-sm">{t('acc.add')}</button>
       </div>
 
       {message && (
@@ -66,53 +73,53 @@ export default function AccountsTab() {
 
       {showForm && (
         <div className={`p-6 rounded-2xl ${cardClass}`}>
-          <h3 className={`text-lg font-semibold mb-4 ${headingClass}`}>{editingId ? "Sửa tài khoản" : "Tạo tài khoản mới"}</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${headingClass}`}>{editingId ? t('acc.action.edit') : t('acc.add_new')}</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className={`block text-sm mb-1 ${subTextClass}`}>Tên ví</label>
-                <input type="text" required value={formName} onChange={(e) => setFormName(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} placeholder="Ví tiền mặt..." />
+                <label className={`block text-sm mb-1 ${subTextClass}`}>{t('acc.form.name')}</label>
+                <input type="text" required value={formName} onChange={(e) => setFormName(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} placeholder={t('acc.form.placeholder.name')} />
               </div>
               <div>
-                <label className={`block text-sm mb-1 ${subTextClass}`}>Phân loại</label>
+                <label className={`block text-sm mb-1 ${subTextClass}`}>{t('acc.form.type')}</label>
                 <GlassSelect 
                   value={formType} 
                   onChange={(val) => setFormType(val)}
                   options={[
-                    { label: "Tiền mặt", value: "cash" },
-                    { label: "Tài khoản ngân hàng", value: "bank" },
-                    { label: "Ví điện tử", value: "e-wallet" },
-                    { label: "Thẻ tín dụng", value: "credit" },
-                    { label: "Tiết kiệm", value: "saving" }
+                    { label: t('acc.type.cash').replace(/💵 /g, ''), value: "cash" },
+                    { label: t('acc.type.bank').replace(/🏦 /g, ''), value: "bank" },
+                    { label: t('acc.type.ewallet').replace(/📱 /g, ''), value: "e-wallet" },
+                    { label: t('acc.type.credit').replace(/💳 /g, ''), value: "credit" },
+                    { label: t('acc.type.savings').replace(/🐖 /g, ''), value: "saving" }
                   ]}
                 />
               </div>
               <div>
-                <label className={`block text-sm mb-1 ${subTextClass}`}>Số dư ban đầu</label>
+                <label className={`block text-sm mb-1 ${subTextClass}`}>{t('acc.form.balance')}</label>
                 <input type="number" step="0.01" value={formBalance} onChange={(e) => setFormBalance(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} />
               </div>
             </div>
             <div className="flex gap-3">
-              <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-colors text-sm">{editingId ? "Cập nhật" : "Tạo mới"}</button>
-              <button type="button" onClick={resetForm} className={`px-5 py-2 rounded-lg font-semibold transition-colors text-sm ${isGlass ? 'glass-btn' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>Huỷ</button>
+              <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-colors text-sm">{editingId ? t('common.update') : t('common.create')}</button>
+              <button type="button" onClick={resetForm} className={`px-5 py-2 rounded-lg font-semibold transition-colors text-sm ${isGlass ? 'glass-btn' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>{t('common.cancel')}</button>
             </div>
           </form>
         </div>
       )}
 
       {loading ? (
-        <div className={`text-center py-10 ${subTextClass}`}>Đang tải...</div>
+        <div className={`text-center py-10 ${subTextClass}`}>{t('common.loading')}</div>
       ) : accounts.length === 0 ? (
-        <div className={`text-center py-10 rounded-2xl ${isGlass ? 'glass-card' : 'bg-slate-900/30 border border-slate-700'} ${subTextClass}`}>Bạn chưa có tài khoản nào. Hãy thêm ví mới!</div>
+        <div className={`text-center py-10 rounded-2xl ${isGlass ? 'glass-card' : 'bg-slate-900/30 border border-slate-700'} ${subTextClass}`}>{t('acc.no_accounts_short')}</div>
       ) : (
         <div className={tableWrapClass}>
           <table className="w-full text-left">
             <thead className={theadClass}>
               <tr>
-                <th className={`px-5 py-3 text-xs font-semibold uppercase ${subTextClass}`}>Tên</th>
-                <th className={`px-5 py-3 text-xs font-semibold uppercase ${subTextClass}`}>Loại</th>
-                <th className={`px-5 py-3 text-xs font-semibold uppercase text-right ${subTextClass}`}>Số dư</th>
-                <th className={`px-5 py-3 text-xs font-semibold uppercase text-center ${subTextClass}`}>Hành động</th>
+                <th className={`px-5 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('acc.form.name')}</th>
+                <th className={`px-5 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('acc.form.type')}</th>
+                <th className={`px-5 py-3 text-xs font-semibold uppercase text-right ${subTextClass}`}>{t('acc.form.balance')}</th>
+                <th className={`px-5 py-3 text-xs font-semibold uppercase text-center ${subTextClass}`}>{t('tx.form.action')}</th>
               </tr>
             </thead>
             <tbody className={`divide-y ${isGlass ? 'divide-white/5' : 'divide-slate-700/50'}`}>
@@ -125,12 +132,12 @@ export default function AccountsTab() {
                       ? `amount-badge ${Number(acc.balance) >= 0 ? "amount-badge-positive" : "amount-badge-negative"}`
                       : `font-mono font-semibold ${Number(acc.balance) >= 0 ? "text-emerald-400" : "text-red-400"}`
                     }>
-                      {Number(acc.balance).toLocaleString("vi-VN")} đ
+                      {Number(acc.balance).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} đ
                     </span>
                   </td>
                   <td className="px-5 py-3 text-center">
-                    <button onClick={() => openEditForm(acc)} className="text-blue-400 hover:text-blue-300 text-sm font-medium mr-4 transition-colors">Sửa</button>
-                    <button onClick={() => handleDelete(acc.id)} className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors">Xoá</button>
+                    <button onClick={() => openEditForm(acc)} className="text-blue-400 hover:text-blue-300 text-sm font-medium mr-4 transition-colors">{t('acc.action.edit')}</button>
+                    <button onClick={() => setConfirmDelete(acc.id)} className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors">{t('acc.action.delete')}</button>
                   </td>
                 </tr>
               ))}
@@ -139,7 +146,7 @@ export default function AccountsTab() {
         </div>
       )}
 
-      <ConfirmModal isOpen={!!confirmDelete} title="Xác nhận xoá tài khoản" message="Bạn có chắc chắn muốn xoá tài khoản này không? Hành động này sẽ hoàn trả số dư nhưng không thể hoàn tác." onConfirm={confirmDeleteAction} onCancel={() => setConfirmDelete(null)} />
+      <ConfirmModal isOpen={!!confirmDelete} title={t('acc.delete_confirm_title')} message={t('acc.delete_confirm_msg')} onConfirm={confirmDeleteAction} onCancel={() => setConfirmDelete(null)} />
     </div>
   );
 }

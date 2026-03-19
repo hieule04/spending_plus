@@ -3,12 +3,14 @@ import { listTransactions, createTransaction, updateTransaction, deleteTransacti
 import ConfirmModal from "./ConfirmModal";
 import GlassSelect from "./GlassSelect";
 import { useGlassTheme } from "../hooks/useGlassTheme";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Transaction { id: string; amount: number; type: string; date: string; note: string | null; account_id: string; category_id: string | null; created_at: string; }
 interface Account { id: string; name: string; type: string; }
 interface Category { id: string; name: string; type: string; icon: string | null; color: string | null; }
 
 export default function TransactionsTab() {
+  const { t, language } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -43,16 +45,15 @@ export default function TransactionsTab() {
     e.preventDefault(); setMessage(null);
     try {
       const payload: any = { amount: parseFloat(formAmount), type: formType, date: new Date(formDate).toISOString(), note: formNote || undefined, account_id: formAccountId, category_id: formCategoryId || undefined };
-      if (editingId) { await updateTransaction(editingId, payload); setMessage({ text: "Cập nhật giao dịch thành công!", type: "success" }); }
-      else { await createTransaction(payload); setMessage({ text: "Thêm giao dịch thành công!", type: "success" }); }
+      if (editingId) { await updateTransaction(editingId, payload); setMessage({ text: t('tx.msg.update_success'), type: "success" }); }
+      else { await createTransaction(payload); setMessage({ text: t('tx.msg.create_success'), type: "success" }); }
       resetForm(); fetchData();
     } catch (err: any) { setMessage({ text: err.message, type: "error" }); }
   };
 
-  const handleDelete = (id: string) => { setConfirmDelete(id); };
   const confirmDeleteAction = async () => {
     if (!confirmDelete) return; setMessage(null);
-    try { await deleteTransaction(confirmDelete); setMessage({ text: "Đã xoá giao dịch.", type: "success" }); fetchData(); } catch (err: any) { setMessage({ text: err.message, type: "error" }); } finally { setConfirmDelete(null); }
+    try { await deleteTransaction(confirmDelete); setMessage({ text: t('tx.msg.delete_success'), type: "success" }); fetchData(); } catch (err: any) { setMessage({ text: err.message, type: "error" }); } finally { setConfirmDelete(null); }
   };
 
   const getAccountName = (id: string) => accounts.find((a) => a.id === id)?.name || "—";
@@ -73,8 +74,8 @@ export default function TransactionsTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className={`text-xl font-bold ${headingClass}`}>Lịch sử giao dịch</h2>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors text-sm">+ Thêm giao dịch</button>
+        <h2 className={`text-xl font-bold ${headingClass}`}>{t('tx.title')}</h2>
+        <button onClick={() => { resetForm(); setShowForm(true); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors text-sm">{t('tx.add')}</button>
       </div>
 
       {message && (
@@ -83,46 +84,46 @@ export default function TransactionsTab() {
 
       {showForm && (
         <div className={`p-6 rounded-2xl ${cardClass}`}>
-          <h3 className={`text-lg font-semibold mb-4 ${headingClass}`}>{editingId ? "Sửa giao dịch" : "Thêm giao dịch mới"}</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${headingClass}`}>{editingId ? t('tx.edit') : t('tx.add_new')}</h3>
           {accounts.length === 0 ? (
-            <div className="p-4 bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-lg text-sm">⚠️ Bạn cần tạo ít nhất 1 tài khoản (ví) trước khi thêm giao dịch.</div>
+            <div className="p-4 bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-lg text-sm">⚠️ {t('tx.error_no_accounts')}</div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div><label className={`block text-sm mb-1 ${subTextClass}`}>Số tiền</label><input type="number" required min="0" step="0.01" value={formAmount} onChange={(e) => setFormAmount(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} placeholder="0" /></div>
-                <div><label className={`block text-sm mb-1 ${subTextClass}`}>Loại</label>
+                <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.amount')}</label><input type="number" required min="0" step="0.01" value={formAmount} onChange={(e) => setFormAmount(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} placeholder="0" /></div>
+                <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.type')}</label>
                   <GlassSelect 
                     value={formType} 
                     onChange={(val) => setFormType(val)} 
                     options={[
-                      { label: "Khoản chi", value: "expense" },
-                      { label: "Khoản thu", value: "income" },
-                      { label: "Chuyển khoản", value: "transfer" }
+                      { label: t('tx.type.expense'), value: "expense" },
+                      { label: t('tx.type.income'), value: "income" },
+                      { label: t('tx.type.transfer'), value: "transfer" }
                     ]}
                   />
                 </div>
-                <div><label className={`block text-sm mb-1 ${subTextClass}`}>Ngày</label><input type="date" required value={formDate} onChange={(e) => setFormDate(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} /></div>
+                <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.date')}</label><input type="date" required value={formDate} onChange={(e) => setFormDate(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} /></div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><label className={`block text-sm mb-1 ${subTextClass}`}>Tài khoản</label>
+                <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.account')}</label>
                   <GlassSelect 
                     value={formAccountId} 
                     onChange={(val) => setFormAccountId(val)} 
                     options={accounts.map((acc) => ({ label: acc.name, value: acc.id }))}
                   />
                 </div>
-                <div><label className={`block text-sm mb-1 ${subTextClass}`}>Danh mục (tùy chọn)</label>
+                <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.category_optional')}</label>
                   <GlassSelect 
                     value={formCategoryId} 
                     onChange={(val) => setFormCategoryId(val)} 
-                    options={[{ label: "— Không chọn —", value: "" }, ...categories.map((cat) => ({ label: `${cat.icon || ""} ${cat.name}`, value: cat.id }))]}
+                    options={[{ label: t('common.none_selected'), value: "" }, ...categories.map((cat) => ({ label: `${cat.icon || ""} ${cat.name}`, value: cat.id }))]}
                   />
                 </div>
               </div>
-              <div><label className={`block text-sm mb-1 ${subTextClass}`}>Ghi chú</label><input type="text" value={formNote} onChange={(e) => setFormNote(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} placeholder="Mô tả ngắn..." /></div>
+              <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.note')}</label><input type="text" value={formNote} onChange={(e) => setFormNote(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} placeholder={t('tx.form.placeholder.note')} /></div>
               <div className="flex gap-3">
-                <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-colors text-sm">{editingId ? "Cập nhật" : "Lưu giao dịch"}</button>
-                <button type="button" onClick={resetForm} className={`px-5 py-2 rounded-lg font-semibold transition-colors text-sm ${isGlass ? 'glass-btn' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>Huỷ</button>
+                <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-colors text-sm">{editingId ? t('common.update') : t('common.save_transaction')}</button>
+                <button type="button" onClick={resetForm} className={`px-5 py-2 rounded-lg font-semibold transition-colors text-sm ${isGlass ? 'glass-btn' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>{t('common.cancel')}</button>
               </div>
             </form>
           )}
@@ -130,20 +131,20 @@ export default function TransactionsTab() {
       )}
 
       {loading ? (
-        <div className={`text-center py-10 ${subTextClass}`}>Đang tải...</div>
+        <div className={`text-center py-10 ${subTextClass}`}>{t('common.loading')}</div>
       ) : transactions.length === 0 ? (
-        <div className={`text-center py-10 rounded-2xl ${isGlass ? 'glass-card' : 'bg-slate-900/30 border border-slate-700'} ${subTextClass}`}>Chưa có giao dịch nào. Hãy thêm giao dịch đầu tiên!</div>
+        <div className={`text-center py-10 rounded-2xl ${isGlass ? 'glass-card' : 'bg-slate-900/30 border border-slate-700'} ${subTextClass}`}>{t('tx.no_transactions_short')}</div>
       ) : (
         <div className={tableWrapClass}>
           <table className="w-full text-left">
             <thead className={theadClass}>
               <tr>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>Ngày</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>Danh mục</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>Ghi chú</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>Tài khoản</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase text-right ${subTextClass}`}>Số tiền</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase text-center ${subTextClass}`}>Hành động</th>
+                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.date')}</th>
+                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.category')}</th>
+                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.note')}</th>
+                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.account')}</th>
+                <th className={`px-4 py-3 text-xs font-semibold uppercase text-right ${subTextClass}`}>{t('tx.form.amount')}</th>
+                <th className={`px-4 py-3 text-xs font-semibold uppercase text-center ${subTextClass}`}>{t('tx.form.action')}</th>
               </tr>
             </thead>
             <tbody className={`divide-y ${isGlass ? 'divide-white/5' : 'divide-slate-700/50'}`}>
@@ -152,7 +153,7 @@ export default function TransactionsTab() {
                 const isIncome = txn.type === "income";
                 return (
                   <tr key={txn.id} className={trHoverClass}>
-                    <td className={`px-4 py-3 text-sm font-bold whitespace-nowrap ${isGlass ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>{new Date(txn.date).toLocaleDateString("vi-VN")}</td>
+                    <td className={`px-4 py-3 text-sm font-bold whitespace-nowrap ${isGlass ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>{new Date(txn.date).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</td>
                     <td className="px-4 py-3 text-sm"><span className="flex items-center gap-1.5">{catInfo.icon && <span>{catInfo.icon}</span>}<span className={`font-bold ${headingClass}`}>{catInfo.name}</span></span></td>
                     <td className={`px-4 py-3 text-sm font-medium truncate max-w-[160px] ${isGlass ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>{txn.note || "—"}</td>
                     <td className={`px-4 py-3 text-sm font-bold ${isGlass ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>{getAccountName(txn.account_id)}</td>
@@ -161,12 +162,12 @@ export default function TransactionsTab() {
                         ? `amount-badge ${isIncome ? "amount-badge-positive" : "amount-badge-negative"}`
                         : `font-mono font-semibold ${isIncome ? "text-emerald-400" : "text-red-400"}`
                       }>
-                        {isIncome ? "+" : "-"}{Number(txn.amount).toLocaleString("vi-VN")} đ
+                        {isIncome ? "+" : "-"}{Number(txn.amount).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} đ
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <button onClick={() => openEditForm(txn)} className="text-blue-400 hover:text-blue-300 text-sm font-medium mr-3 transition-colors">Sửa</button>
-                      <button onClick={() => handleDelete(txn.id)} className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors">Xoá</button>
+                      <button onClick={() => openEditForm(txn)} className="text-blue-400 hover:text-blue-300 text-sm font-medium mr-3 transition-colors">{t('tx.action.edit')}</button>
+                      <button onClick={() => setConfirmDelete(txn.id)} className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors">{t('tx.action.delete')}</button>
                     </td>
                   </tr>
                 );
@@ -176,7 +177,7 @@ export default function TransactionsTab() {
         </div>
       )}
 
-      <ConfirmModal isOpen={!!confirmDelete} title="Xác nhận xoá giao dịch" message="Bạn có chắc chắn muốn xoá giao dịch này không? Số dư tài khoản sẽ được tính toán lại." onConfirm={confirmDeleteAction} onCancel={() => setConfirmDelete(null)} />
+      <ConfirmModal isOpen={!!confirmDelete} title={t('tx.delete_confirm_title')} message={t('tx.delete_confirm_msg')} onConfirm={confirmDeleteAction} onCancel={() => setConfirmDelete(null)} />
     </div>
   );
 }

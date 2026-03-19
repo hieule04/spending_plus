@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import ProfileModal from "./ProfileModal";
 import SystemModal from "./SystemModal";
 import { getProfile } from "../service/api";
+import { useLanguage } from "../context/LanguageContext";
 
 type AppTheme = 'light' | 'dark' | 'glass';
 
@@ -11,6 +12,7 @@ interface TopBarProps {
 }
 
 export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
+  const { t, language, setLanguage } = useLanguage();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSystem, setShowSystem] = useState(false);
@@ -121,7 +123,7 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
               : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'
           }`}>
             <div className={`px-4 py-3 border-b ${isGlass ? 'border-white/10' : 'border-slate-100 dark:border-slate-700'}`}>
-              <p className={`text-sm font-medium ${isGlass ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>Tài khoản</p>
+              <p className={`text-sm font-medium ${isGlass ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>{t('nav.profile')}</p>
             </div>
             
             <div className="p-2 space-y-1">
@@ -129,14 +131,14 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
                 isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
               }`}>
                 <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                Hồ sơ
+                {t('nav.profile')}
               </button>
               
               <button onClick={() => handleAction('system')} className={`w-full text-left px-4 py-2.5 rounded-xl font-bold flex items-center gap-3 transition-colors ${
                 isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
               }`}>
                 <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                Hệ thống
+                {t('nav.system')}
               </button>
 
               {/* Theme Sub-menu on Hover */}
@@ -146,7 +148,7 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
                 }`}>
                   <div className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
-                    Nền
+                    {t('nav.theme')}
                   </div>
                   <svg className="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                 </button>
@@ -159,19 +161,48 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
                     isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
                   }`}>
                     <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    Sáng
+                    {t('nav.theme.light')}
                   </button>
                   <button onClick={() => setTheme('dark')} className={`w-full text-left px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-3 transition-colors ${
                     isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
                   }`}>
                     <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                    Tối
+                    {t('nav.theme.dark')}
                   </button>
                   <button onClick={() => setTheme('glass')} className={`w-full text-left px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-3 transition-colors ${
                     isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
                   }`}>
                     <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                    Glass
+                    {t('nav.theme.glass')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Language Sub-menu */}
+              <div className="group/lang relative">
+                <button className={`w-full text-left px-4 py-2.5 rounded-xl font-bold flex items-center justify-between gap-3 transition-colors ${
+                  isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
+                    {t('nav.language')}
+                  </div>
+                  <svg className="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                <div className={`absolute left-full top-0 ml-1 w-44 rounded-2xl shadow-2xl py-2 opacity-0 invisible group-hover/lang:opacity-100 group-hover/lang:visible transition-all duration-200 ${
+                  isGlass ? 'glass-dropdown' : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'
+                }`}>
+                  <button onClick={() => { setLanguage('vi'); setDropdownOpen(false); }} className={`w-full text-left px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-between gap-3 transition-colors ${
+                    isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+                  }`}>
+                    {t('lang.vi')}
+                    {language === 'vi' && <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>}
+                  </button>
+                  <button onClick={() => { setLanguage('en'); setDropdownOpen(false); }} className={`w-full text-left px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-between gap-3 transition-colors ${
+                    isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+                  }`}>
+                    {t('lang.en')}
+                    {language === 'en' && <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>}
                   </button>
                 </div>
               </div>
@@ -182,7 +213,7 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
                 isGlass ? 'text-rose-400 hover:bg-rose-500/10' : 'hover:bg-rose-50 text-rose-600 dark:text-rose-400 dark:hover:bg-rose-500/10'
               }`}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                Đăng xuất
+                {t('nav.logout')}
               </button>
             </div>
           </div>

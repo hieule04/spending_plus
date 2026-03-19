@@ -5,6 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip, ResponsiveContainer,
   AreaChart, Area
 } from "recharts";
+import { useLanguage } from "../context/LanguageContext";
 
 interface CategoryExpense { category_name: string; color: string; amount: number; }
 interface ColumnData { name: string; income: number; expense: number; }
@@ -12,6 +13,7 @@ interface LineData { date: string; income: number; expense: number; }
 interface SummaryStats { balance: number; total_income: number; total_expense: number; pie_data: CategoryExpense[]; column_data: ColumnData[]; line_data: LineData[]; }
 
 export default function DashboardTab() {
+  const { t, language } = useLanguage();
   const [stats, setStats] = useState<SummaryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +28,18 @@ export default function DashboardTab() {
   }, []);
 
   const fetchStats = async (selectedPeriod: string) => {
-    try { setLoading(true); const data = await getSummaryStats(selectedPeriod); if (data) { setStats(data); setError(null); } } catch (err: any) { setError(err.message || "Lỗi tải thống kê"); } finally { setLoading(false); }
+    try { 
+      setLoading(true); 
+      const data = await getSummaryStats(selectedPeriod); 
+      if (data) { 
+        setStats(data); 
+        setError(null); 
+      } 
+    } catch (err: any) { 
+      setError(err.message || t('db.error_load')); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   useEffect(() => {
@@ -36,7 +49,10 @@ export default function DashboardTab() {
     return () => window.removeEventListener("refresh_transactions", handleRefresh);
   }, [period]);
 
-  const formatCurrency = (value: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  const formatCurrency = (value: number) => new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US', { 
+    style: 'currency', 
+    currency: 'VND' 
+  }).format(value);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -73,24 +89,24 @@ export default function DashboardTab() {
   const cardClass = isGlass ? 'glass-card' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm';
   const headingClass = isGlass ? 'text-white drop-shadow-md' : 'text-slate-900 dark:text-white font-bold';
   const subTextClass = isGlass ? 'text-white drop-shadow-md' : 'text-slate-600 dark:text-slate-400 font-bold';
-  const gridColor = isGlass ? 'rgba(255,255,255,0.06)' : '#cbd5e1'; // slate-200 for Light
-  const axisColor = isGlass ? 'rgba(255,255,255,0.4)' : '#475569'; // slate-600
+  const gridColor = isGlass ? 'rgba(255,255,255,0.06)' : '#cbd5e1'; 
+  const axisColor = isGlass ? 'rgba(255,255,255,0.4)' : '#475569'; 
 
   return (
     <div className="space-y-6 animate-fade-in mb-6">
       
       {/* Time Filter Bar */}
       <div className={`flex flex-wrap items-center justify-between gap-4 p-2 sm:p-2.5 rounded-2xl shadow-sm ${cardClass}`}>
-        <h2 className={`font-bold px-3 hidden sm:block ${headingClass}`}>Phân tích dòng tiền</h2>
+        <h2 className={`font-bold px-3 hidden sm:block ${headingClass}`}>{t('db.title')}</h2>
         <div className={`flex p-1 rounded-xl w-full sm:w-auto overflow-x-auto hide-scrollbar ${
           isGlass ? 'bg-white/10' : 'bg-slate-100 dark:bg-slate-900/50'
         }`}>
           {[
-            { id: 'all', label: 'Tất cả' },
-            { id: 'day', label: 'Hôm nay' },
-            { id: 'week', label: 'Tuần này' },
-            { id: 'month', label: 'Tháng này' },
-            { id: 'year', label: 'Năm nay' }
+            { id: 'all', label: t('db.period.all') },
+            { id: 'day', label: t('db.period.day') },
+            { id: 'week', label: t('db.period.week') },
+            { id: 'month', label: t('db.period.month') },
+            { id: 'year', label: t('db.period.year') }
           ].map(p => (
             <button
               key={p.id}
@@ -125,7 +141,7 @@ export default function DashboardTab() {
               <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all ${
                 isGlass ? 'bg-blue-500/10 group-hover:bg-blue-500/20' : 'bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20'
               }`}></div>
-              <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>Tổng Số Dư</h3>
+              <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.balance')}</h3>
               <p className={`text-3xl font-extrabold ${headingClass}`}>{formatCurrency(stats.balance)}</p>
             </div>
             <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group ${
@@ -134,7 +150,7 @@ export default function DashboardTab() {
               <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all ${
                 isGlass ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20'
               }`}></div>
-              <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>Tổng Thu</h3>
+              <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.income')}</h3>
               <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">+{formatCurrency(stats.total_income)}</p>
             </div>
             <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group ${
@@ -143,15 +159,14 @@ export default function DashboardTab() {
               <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all ${
                 isGlass ? 'bg-rose-500/10 group-hover:bg-rose-500/20' : 'bg-rose-50 dark:bg-rose-500/10 group-hover:bg-rose-100 dark:group-hover:bg-rose-500/20'
               }`}></div>
-              <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>Tổng Chi</h3>
+              <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.expense')}</h3>
               <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">-{formatCurrency(stats.total_expense)}</p>
             </div>
           </div>
 
-          {/* Pie + Bar Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className={`p-6 sm:p-8 rounded-3xl shadow-sm ${cardClass}`}>
-              <h3 className={`text-lg font-bold mb-6 ${headingClass}`}>Tỷ lệ Chi Tiêu</h3>
+              <h3 className={`text-lg font-bold mb-6 ${headingClass}`}>{t('db.chart.ratio')}</h3>
               {stats.pie_data && stats.pie_data.length > 0 ? (
                 <div className="h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -166,13 +181,13 @@ export default function DashboardTab() {
                 </div>
               ) : (
                 <div className={`flex flex-col items-center justify-center h-48 ${subTextClass}`}>
-                  <p className="font-medium text-sm">Chưa có dữ liệu</p>
+                  <p className="font-medium text-sm">{t('db.no_data')}</p>
                 </div>
               )}
             </div>
 
             <div className={`p-6 sm:p-8 rounded-3xl shadow-sm ${cardClass}`}>
-              <h3 className={`text-lg font-bold mb-6 ${headingClass}`}>So sánh Thu / Chi</h3>
+              <h3 className={`text-lg font-bold mb-6 ${headingClass}`}>{t('db.chart.compare')}</h3>
               {stats.column_data && (stats.column_data[0].income > 0 || stats.column_data[0].expense > 0) ? (
                 <div className="h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -181,20 +196,19 @@ export default function DashboardTab() {
                       <XAxis dataKey="name" stroke={axisColor} tick={{fill: axisColor, fontWeight: 600}} axisLine={false} tickLine={false} />
                       <BarTooltip content={<CustomTooltip />} cursor={{fill: isGlass ? 'rgba(255,255,255,0.03)' : 'rgba(51, 65, 85, 0.1)'}} />
                       <Legend wrapperStyle={{ paddingTop: '20px', color: isGlass ? 'rgba(255,255,255,0.7)' : undefined }} />
-                      <Bar dataKey="income" name="Thu Nhập" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={80} />
-                      <Bar dataKey="expense" name="Chi Tiêu" fill="#f43f5e" radius={[6, 6, 0, 0]} maxBarSize={80} />
+                      <Bar dataKey="income" name={t('db.chart.income')} fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={80} />
+                      <Bar dataKey="expense" name={t('db.chart.expense')} fill="#f43f5e" radius={[6, 6, 0, 0]} maxBarSize={80} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className={`flex flex-col items-center justify-center h-48 ${subTextClass}`}><p className="font-medium text-sm">Chưa có dữ liệu</p></div>
+                <div className={`flex flex-col items-center justify-center h-48 ${subTextClass}`}><p className="font-medium text-sm">{t('db.no_data')}</p></div>
               )}
             </div>
           </div>
 
-          {/* Area Chart */}
           <div className={`p-6 sm:p-8 rounded-3xl shadow-sm mt-6 ${cardClass}`}>
-            <h3 className={`text-lg font-bold mb-6 ${headingClass}`}>Diễn biến Dòng Tiền</h3>
+            <h3 className={`text-lg font-bold mb-6 ${headingClass}`}>{t('db.chart.trend')}</h3>
             {stats.line_data && stats.line_data.length > 0 ? (
               <div className="h-80 w-full relative">
                 <svg style={{ height: 0 }}>
@@ -210,14 +224,14 @@ export default function DashboardTab() {
                     <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 12}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} />
                     <BarTooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ paddingTop: '20px', color: isGlass ? 'rgba(255,255,255,0.7)' : undefined }} />
-                    <Area type="monotone" dataKey="income" name="Thu Nhập" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
-                    <Area type="monotone" dataKey="expense" name="Chi Tiêu" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
+                    <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
+                    <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             ) : (
               <div className={`flex flex-col items-center justify-center h-64 ${subTextClass}`}>
-                <p className="font-medium">Chưa có giao dịch trong khoảng thời gian này</p>
+                <p className="font-medium">{t('db.no_transactions_period')}</p>
               </div>
             )}
           </div>
