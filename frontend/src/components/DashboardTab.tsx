@@ -1,0 +1,278 @@
+import { useState, useEffect } from "react";
+import { getSummaryStats } from "../service/api";
+import { 
+  PieChart, Pie, Cell, Tooltip as PieTooltip, Legend, 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip, ResponsiveContainer,
+  AreaChart, Area
+} from "recharts";
+
+interface CategoryExpense {
+  category_name: string;
+  color: string;
+  amount: number;
+}
+
+interface ColumnData {
+  name: string;
+  income: number;
+  expense: number;
+}
+
+interface LineData {
+  date: string;
+  income: number;
+  expense: number;
+}
+
+interface SummaryStats {
+  balance: number;
+  total_income: number;
+  total_expense: number;
+  pie_data: CategoryExpense[];
+  column_data: ColumnData[];
+  line_data: LineData[];
+}
+
+export default function DashboardTab() {
+  const [stats, setStats] = useState<SummaryStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState<string>("month");
+
+  const fetchStats = async (selectedPeriod: string) => {
+    try {
+      setLoading(true);
+      const data = await getSummaryStats(selectedPeriod);
+      if (data) {
+        setStats(data);
+        setError(null);
+      }
+    } catch (err: any) {
+      setError(err.message || "Lỗi tải thống kê");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats(period);
+    
+    // Refresh khi có giao dịch mới
+    const handleRefresh = () => fetchStats(period);
+    window.addEventListener("refresh_transactions", handleRefresh);
+    return () => window.removeEventListener("refresh_transactions", handleRefresh);
+  }, [period]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-xl">
+          <p className="text-white font-bold mb-2 pb-2 border-b border-slate-700">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} style={{ color: entry.color || entry.fill }} className="text-sm font-medium flex items-center justify-between gap-4">
+              <span>{entry.name}:</span>
+              <span>{formatCurrency(Number(entry.value))}</span>
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      return (
+        <div className="bg-slate-800 border border-slate-700 p-3 rounded-xl shadow-xl flex items-center gap-3">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.fill }}></div>
+          <span className="text-white font-medium">{data.name}:</span>
+          <span className="text-white font-bold">{formatCurrency(Number(data.value))}</span>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in mb-6">
+      
+      {/* Bộ lọc thời gian */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-800 p-2 sm:p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h2 className="text-slate-800 dark:text-white font-bold px-3 hidden sm:block">Phân tích dòng tiền</h2>
+        <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl w-full sm:w-auto overflow-x-auto hide-scrollbar">
+          {[
+            { id: 'all', label: 'Tất cả' },
+            { id: 'day', label: 'Hôm nay' },
+            { id: 'week', label: 'Tuần này' },
+            { id: 'month', label: 'Tháng này' },
+            { id: 'year', label: 'Năm nay' }
+          ].map(p => (
+            <button
+              key={p.id}
+              onClick={() => setPeriod(p.id)}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg whitespace-nowrap transition-all ${
+                period === p.id 
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading && !stats ? (
+        <div className="flex justify-center items-center h-48 bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      ) : error ? (
+        <div className="text-red-500 bg-red-50 dark:bg-red-900/10 p-6 rounded-2xl border border-red-200 dark:border-red-900/30 text-center font-medium">⚠️ {error}</div>
+      ) : stats ? (
+        <>
+          {/* 3 Thẻ Trạng Thái */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-blue-500/30 shadow-sm shadow-blue-500/5 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-32 h-32 bg-blue-50 dark:bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-all"></div>
+              <h3 className="text-slate-500 dark:text-slate-400 text-sm font-bold mb-2 uppercase tracking-wide">Tổng Số Dư</h3>
+              <p className="text-3xl font-extrabold text-slate-800 dark:text-white">{formatCurrency(stats.balance)}</p>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-emerald-500/30 shadow-sm shadow-emerald-500/5 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-32 h-32 bg-emerald-50 dark:bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 transition-all"></div>
+              <h3 className="text-slate-500 dark:text-slate-400 text-sm font-bold mb-2 uppercase tracking-wide">Tổng Thu</h3>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">+{formatCurrency(stats.total_income)}</p>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-rose-500/30 shadow-sm shadow-rose-500/5 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-32 h-32 bg-rose-50 dark:bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-100 dark:group-hover:bg-rose-500/20 transition-all"></div>
+              <h3 className="text-slate-500 dark:text-slate-400 text-sm font-bold mb-2 uppercase tracking-wide">Tổng Chi</h3>
+              <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">-{formatCurrency(stats.total_expense)}</p>
+            </div>
+          </div>
+
+          {/* Hàng 2: Pie Chart & Bar Chart */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Tỷ lệ chi tiêu - PieChart */}
+            <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Tỷ lệ Chi Tiêu</h3>
+              {stats.pie_data && stats.pie_data.length > 0 ? (
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.pie_data}
+                        dataKey="amount"
+                        nameKey="category_name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        innerRadius={60}
+                        paddingAngle={3}
+                      >
+                        {stats.pie_data.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                        ))}
+                      </Pie>
+                      <PieTooltip content={<CustomPieTooltip />} />
+                      <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ paddingLeft: '10px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                  <svg className="w-12 h-12 mb-3 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4M12 20V4M4 12h16M12 4v16"></path></svg>
+                  <p className="font-medium text-sm">Chưa có dữ liệu</p>
+                </div>
+              )}
+            </div>
+
+            {/* So sánh Thu / Chi - BarChart */}
+            <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">So sánh Thu / Chi</h3>
+              {stats.column_data && (stats.column_data[0].income > 0 || stats.column_data[0].expense > 0) ? (
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.column_data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
+                      <XAxis dataKey="name" stroke="#64748b" tick={{fill: '#64748b', fontWeight: 600}} axisLine={false} tickLine={false} />
+                      <BarTooltip content={<CustomTooltip />} cursor={{fill: 'rgba(51, 65, 85, 0.1)'}} />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <Bar dataKey="income" name="Thu Nhập" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={80} />
+                      <Bar dataKey="expense" name="Chi Tiêu" fill="#f43f5e" radius={[6, 6, 0, 0]} maxBarSize={80} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                  <p className="font-medium text-sm">Chưa có dữ liệu</p>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Hàng 3: Biểu đồ đường cong - AreaChart */}
+          <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm mt-6">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Diễn biến Dòng Tiền</h3>
+            {stats.line_data && stats.line_data.length > 0 ? (
+              <div className="h-80 w-full relative">
+                {/* Gradient definitions for Area chart */}
+                <svg style={{ height: 0 }}>
+                  <defs>
+                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats.line_data} margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#64748b" 
+                      tick={{fill: '#64748b', fontSize: 12}} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tickMargin={10}
+                      minTickGap={20}
+                    />
+                    <YAxis 
+                      stroke="#64748b" 
+                      tick={{fill: '#64748b', fontSize: 12}} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tickFormatter={(value) => {
+                        if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                        if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+                        return value;
+                      }}
+                    />
+                    <BarTooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                    <Area type="monotone" dataKey="income" name="Thu Nhập" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
+                    <Area type="monotone" dataKey="expense" name="Chi Tiêu" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                <p className="font-medium">Chưa có giao dịch trong khoảng thời gian này</p>
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
