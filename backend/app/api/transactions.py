@@ -125,7 +125,7 @@ def update(
 # ------------------------------------------
 # DELETE /{id} — Xoá giao dịch
 # ------------------------------------------
-@router.delete("/{txn_id}")
+@router.delete("/{txn_id}", response_model=schemas.DeleteResponse)
 def delete(
     txn_id: UUID,
     current_user: models.User = Depends(get_current_user),

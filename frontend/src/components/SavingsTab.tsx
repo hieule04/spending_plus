@@ -4,6 +4,7 @@ import {
   listAccounts, createTransaction
 } from "../service/api";
 import GlassSelect from "./GlassSelect";
+import ConfirmModal from "./ConfirmModal";
 import { useGlassTheme } from "../hooks/useGlassTheme";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -29,15 +30,19 @@ export default function SavingsTab() {
   const [amount, setAmount] = useState("");
   const [selectedAccount, setSelectedAccount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
-    const data = await getSavings();
-    if (data) setGoals(data);
-    
-    const accs = await listAccounts();
-    if (accs) setAccounts(accs);
-    setLoading(false);
+    try {
+      const [data, accs] = await Promise.all([getSavings(), listAccounts()]);
+      setGoals(data || []);
+      setAccounts(accs || []);
+    } catch (err: any) {
+      setMessage({ text: err.message || "Không thể tải dữ liệu tiết kiệm", type: "error" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -111,19 +116,17 @@ export default function SavingsTab() {
     window.dispatchEvent(new CustomEvent("refresh_accounts"));
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa sổ tiết kiệm này? Các giao dịch liên quan sẽ được giữ lại nhưng không còn liên kết với sổ.")) {
-      try {
-        console.log("Đang bắt đầu xóa goal id:", id);
-        const res = await deleteSaving(id);
-        console.log("Kết quả xóa từ API:", res);
-        setMessage({ text: "Đã xóa sổ tiết kiệm thành công!", type: "success" });
-        fetchData();
-      } catch (err: any) {
-        console.error("Lỗi chi tiết khi xóa:", err);
-        const errorMsg = err.response?.data?.detail || err.message || "Lỗi không xác định";
-        setMessage({ text: `Lỗi khi xóa: ${errorMsg}`, type: "error" });
-      }
+  const confirmDeleteGoal = async () => {
+    if (!confirmDeleteId) return;
+    try {
+      await deleteSaving(confirmDeleteId);
+      setMessage({ text: "Đã xóa sổ tiết kiệm thành công!", type: "success" });
+      fetchData();
+    } catch (err: any) {
+      const errorMsg = err.message || "Lỗi không xác định";
+      setMessage({ text: `Lỗi khi xóa: ${errorMsg}`, type: "error" });
+    } finally {
+      setConfirmDeleteId(null);
       setTimeout(() => setMessage(null), 5000);
     }
   };
@@ -216,7 +219,7 @@ export default function SavingsTab() {
                     <button onClick={() => handleOpenModal(goal)} className="p-1.5 rounded-lg hover:bg-white/10 text-blue-500">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     </button>
-                    <button onClick={() => handleDelete(goal.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-rose-500">
+                    <button onClick={() => setConfirmDeleteId(goal.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-rose-500">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 2 0 00-1-1h-4a1 2 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                   </div>
@@ -358,6 +361,13 @@ export default function SavingsTab() {
           </div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="Xác nhận xóa sổ"
+        message="Bạn có chắc chắn muốn xóa sổ tiết kiệm này? Các giao dịch liên quan sẽ được giữ lại nhưng không còn liên kết với sổ."
+        onConfirm={confirmDeleteGoal}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

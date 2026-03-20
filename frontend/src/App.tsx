@@ -11,7 +11,7 @@ import TopBar from "./components/TopBar"
 import "./App.css"
 import { useLanguage } from "./context/LanguageContext"
 
-type TabType = 'system' | 'transactions' | 'savings' | 'accounts' | 'categories' | 'budgets' | 'info';
+type TabType = 'system' | 'transactions' | 'savings' | 'accounts' | 'categories' | 'budgets';
 
 function App() {
   const { t, language } = useLanguage();
@@ -58,7 +58,6 @@ function App() {
     { id: 'budgets',      label: t('nav.budgets') },
     { id: 'accounts',     label: t('nav.accounts') },
     { id: 'categories',   label: t('nav.categories') },
-    { id: 'info',         label: t('nav.info') },
   ];
 
   if (!isLoggedIn) {
@@ -251,27 +250,6 @@ function App() {
             {activeTab === 'budgets' && <BudgetsTab />}
             {activeTab === 'accounts' && <AccountsTab />}
             {activeTab === 'categories' && <CategoriesTab />}
-            {activeTab === 'info' && (
-              <div className="flex items-center justify-center h-full">
-                <div className={`p-10 rounded-[2.5rem] max-w-lg w-full text-center ${isGlass ? 'glass-card' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl'}`}>
-                  <div className={`w-20 h-20 rounded-3xl mx-auto mb-8 flex items-center justify-center text-4xl ${isGlass ? 'bg-white/10 shadow-lg' : 'bg-blue-600 text-white shadow-blue-500/20 shadow-xl'}`}>ℹ️</div>
-                  <h2 className={`text-3xl font-black mb-8 ${isGlass ? 'text-white drop-shadow-md' : 'text-slate-900 dark:text-white'}`}>{t('info.title')}</h2>
-                  <div className="space-y-6 text-left">
-                    <div className={`p-4 rounded-2xl ${isGlass ? 'bg-white/5 border border-white/10' : 'bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800'}`}>
-                      <p className={`text-sm uppercase tracking-widest font-bold mb-1 ${isGlass ? 'text-white/50' : 'text-slate-500'}`}>{t('info.author')}</p>
-                      <p className={`text-xl font-extrabold ${isGlass ? 'text-white' : 'text-slate-900 dark:text-white'}`}>Lê Minh Hiếu</p>
-                    </div>
-                    <div className={`p-4 rounded-2xl ${isGlass ? 'bg-white/5 border border-white/10' : 'bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800'}`}>
-                      <p className={`text-sm uppercase tracking-widest font-bold mb-1 ${isGlass ? 'text-white/50' : 'text-slate-500'}`}>{t('info.created')}</p>
-                      <p className={`text-xl font-extrabold ${isGlass ? 'text-white' : 'text-slate-900 dark:text-white'}`}>19/03/2026</p>
-                    </div>
-                  </div>
-                  <div className={`mt-10 text-xs font-bold uppercase tracking-tighter ${isGlass ? 'text-white/20' : 'text-slate-400'}`}>
-                    Spending Plus &copy; 2026 All Rights Reserved
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </main>

@@ -22,7 +22,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (key: TranslationKey): string => {
-    return translations[language][key] || key;
+    const dictionary = translations[language] as Record<TranslationKey, string>;
+    return dictionary[key] || key;
   };
 
   return (

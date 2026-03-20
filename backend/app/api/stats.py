@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from app.database import get_db
 from app.deps import get_current_user
-from app import models
+from app import models, schemas
 
 router = APIRouter(prefix="/stats", tags=["Stats"])
 
@@ -22,7 +22,7 @@ def get_start_date(period: str):
         return now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     return None
 
-@router.get("/summary")
+@router.get("/summary", response_model=schemas.DashboardSummaryResponse)
 def get_dashboard_summary(
     period: str = Query("month", description="Lọc theo: all, day, week, month, year"),
     db: Session = Depends(get_db),

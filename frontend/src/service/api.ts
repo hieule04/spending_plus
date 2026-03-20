@@ -1,9 +1,8 @@
 import axios, { AxiosError } from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_BASE_URL } from "../config/env";
 
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   timeout: 10000,
 });
 
@@ -15,10 +14,6 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
-
-if (!import.meta.env.VITE_API_URL) {
-  console.warn("VITE_API_URL not set, using fallback:", API_URL);
-}
 
 // Hàm hỗ trợ xử lý lỗi từ FastAPI
 const handleApiError = (error: unknown, defaultMessage: string): never => {
@@ -263,8 +258,7 @@ export const getUnreadCount = async () => {
     const response = await api.get("/api/notifications/unread-count");
     return response.data.unread_count;
   } catch (error) {
-    console.error("Lỗi khi lấy số lượng thông báo:", error);
-    return 0;
+    handleApiError(error, "Không thể tải số lượng thông báo.");
   }
 };
 
@@ -273,8 +267,7 @@ export const getNotifications = async () => {
     const response = await api.get("/api/notifications");
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi lấy thông báo:", error);
-    return [];
+    handleApiError(error, "Không thể tải danh sách thông báo.");
   }
 };
 
@@ -283,18 +276,16 @@ export const markNotificationsAsRead = async () => {
     const response = await api.put("/api/notifications/mark-as-read");
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi đánh dấu đã đọc:", error);
-    return null;
+    handleApiError(error, "Không thể đánh dấu thông báo đã đọc.");
   }
 };
 
-export const deleteNotification = async (id: number) => {
+export const deleteNotification = async (id: string) => {
   try {
     const response = await api.delete(`/api/notifications/${id}`);
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi xóa thông báo:", error);
-    return null;
+    handleApiError(error, "Không thể xóa thông báo.");
   }
 };
 
@@ -303,8 +294,7 @@ export const clearNotifications = async () => {
     const response = await api.delete("/api/notifications");
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi xóa tất cả thông báo:", error);
-    return null;
+    handleApiError(error, "Không thể xóa toàn bộ thông báo.");
   }
 };
 
@@ -317,8 +307,7 @@ export const getSavings = async () => {
     const response = await api.get("/api/savings");
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi lấy danh sách tiết kiệm:", error);
-    return [];
+    handleApiError(error, "Không thể tải danh sách tiết kiệm.");
   }
 };
 
@@ -327,8 +316,7 @@ export const createSaving = async (data: any) => {
     const response = await api.post("/api/savings", data);
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi tạo sổ tiết kiệm:", error);
-    return null;
+    handleApiError(error, "Tạo sổ tiết kiệm thất bại.");
   }
 };
 
@@ -337,8 +325,7 @@ export const updateSaving = async (id: string, data: any) => {
     const response = await api.put(`/api/savings/${id}`, data);
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi cập nhật sổ tiết kiệm:", error);
-    return null;
+    handleApiError(error, "Cập nhật sổ tiết kiệm thất bại.");
   }
 };
 
@@ -346,9 +333,8 @@ export const deleteSaving = async (id: string) => {
   try {
     const response = await api.delete(`/api/savings/${id}`);
     return response.data;
-  } catch (error: any) {
-    console.error("Link error deleteSaving:", error);
-    throw error;
+  } catch (error) {
+    handleApiError(error, "Xóa sổ tiết kiệm thất bại.");
   }
 };
 
@@ -356,8 +342,7 @@ export const deleteBudget = async (id: string) => {
   try {
     const response = await api.delete(`/api/budgets/${id}`);
     return response.data;
-  } catch (error: any) {
-    console.error("Lỗi khi xóa ngân sách:", error);
-    throw error;
+  } catch (error) {
+    handleApiError(error, "Xóa ngân sách thất bại.");
   }
 };

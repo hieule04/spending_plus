@@ -21,7 +21,7 @@ def get_notifications(
     ).order_by(models.Notification.created_at.desc()).limit(limit).all()
 
 
-@router.get("/notifications/unread-count")
+@router.get("/notifications/unread-count", response_model=schemas.UnreadCountResponse)
 def get_unread_count(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(deps.get_current_user)
@@ -34,7 +34,7 @@ def get_unread_count(
     return {"unread_count": count}
 
 
-@router.put("/notifications/mark-as-read")
+@router.put("/notifications/mark-as-read", response_model=schemas.MessageResponse)
 def mark_notifications_as_read(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(deps.get_current_user)
@@ -48,7 +48,7 @@ def mark_notifications_as_read(
     return {"message": "Tất cả thông báo đã được đánh dấu là đã đọc."}
 
 
-@router.delete("/notifications/{notification_id}")
+@router.delete("/notifications/{notification_id}", response_model=schemas.MessageResponse)
 def delete_notification(notification_id: UUID, db: Session = Depends(get_db), current_user: models.User = Depends(deps.get_current_user)):
     """Xóa một thông báo cụ thể."""
     notif = db.query(models.Notification).filter(
@@ -61,7 +61,7 @@ def delete_notification(notification_id: UUID, db: Session = Depends(get_db), cu
     db.commit()
     return {"message": "Đã xóa thông báo"}
 
-@router.delete("/notifications")
+@router.delete("/notifications", response_model=schemas.MessageResponse)
 def clear_all_notifications(db: Session = Depends(get_db), current_user: models.User = Depends(deps.get_current_user)):
     """Xóa tất cả thông báo của người dùng."""
     db.query(models.Notification).filter(

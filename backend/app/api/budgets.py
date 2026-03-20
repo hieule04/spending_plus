@@ -6,7 +6,7 @@ from typing import List
 
 from app.database import get_db
 from app.models import Budget, User, Category
-from app.schemas import BudgetCreate, BudgetResponse, BudgetReportResponse
+from app.schemas import BudgetCreate, BudgetResponse, BudgetReportResponse, MessageResponse
 from app.deps import get_current_user
 from app.crud import budgets as crud_budgets
 
@@ -92,7 +92,7 @@ def get_budgets(
     """
     budgets = db.query(Budget).filter(Budget.user_id == current_user.id).all()
     return budgets
-@router.delete("/{budget_id}")
+@router.delete("/{budget_id}", response_model=MessageResponse)
 def delete_budget(
     budget_id: UUID,
     db: Session = Depends(get_db),

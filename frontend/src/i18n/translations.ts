@@ -168,6 +168,7 @@ export const translations = {
     'info.title': 'Thông tin hệ thống',
     'info.author': 'Tác giả',
     'info.created': 'Ngày khởi tạo',
+    'info.contact': 'Liên hệ',
   },
   en: {
     // Navigation
@@ -326,6 +327,7 @@ export const translations = {
     'info.title': 'System Information',
     'info.author': 'Creator',
     'info.created': 'Created Date',
+    'info.contact': 'Contact',
   }
 };
 

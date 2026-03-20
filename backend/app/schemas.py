@@ -241,3 +241,57 @@ class SavingsGoalResponse(SavingsGoalBase):
     created_at: datetime
     updated_at: datetime
     model_config = model_config
+
+
+# ==========================================
+# 8. Common/System/Stats Schemas
+# ==========================================
+
+class MessageResponse(BaseModel):
+    message: str
+
+
+class DeleteResponse(BaseModel):
+    detail: str
+    deleted_id: str
+
+
+class UnreadCountResponse(BaseModel):
+    unread_count: int
+
+
+class SystemHealthResponse(BaseModel):
+    message: str
+
+
+class DatabaseConnectionResponse(BaseModel):
+    status: str
+    message: str
+    supabase_version: Optional[str] = None
+
+
+class PieDataItem(BaseModel):
+    category_name: str
+    color: str
+    amount: float
+
+
+class ColumnDataItem(BaseModel):
+    name: str
+    income: float
+    expense: float
+
+
+class LineDataItem(BaseModel):
+    date: str
+    income: float
+    expense: float
+
+
+class DashboardSummaryResponse(BaseModel):
+    balance: float
+    total_income: float
+    total_expense: float
+    pie_data: list[PieDataItem]
+    column_data: list[ColumnDataItem]
+    line_data: list[LineDataItem]

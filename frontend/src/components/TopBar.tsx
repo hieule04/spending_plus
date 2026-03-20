@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ProfileModal from "./ProfileModal";
+import InfoModal from "./InfoModal";
 import SystemModal from "./SystemModal";
 import { 
   getProfile, getUnreadCount, getNotifications, 
@@ -8,6 +9,8 @@ import {
 import { useLanguage } from "../context/LanguageContext";
 
 type AppTheme = 'light' | 'dark' | 'glass';
+type ThemeTranslationKey = 'nav.theme.light' | 'nav.theme.dark' | 'nav.theme.glass';
+type LanguageTranslationKey = 'lang.vi' | 'lang.en';
 
 interface TopBarProps {
   onLogout: () => void;
@@ -18,6 +21,7 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
   const { t, language, setLanguage } = useLanguage();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [showSystem, setShowSystem] = useState(false);
   
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -48,11 +52,18 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
   };
   
   const fetchNotifs = async () => {
-    const count = await getUnreadCount();
-    setUnreadCount(count);
-    if (dropdownOpen) {
-      const list = await getNotifications();
-      setNotifications(list || []);
+    try {
+      const count = await getUnreadCount();
+      setUnreadCount(count ?? 0);
+      if (dropdownOpen) {
+        const list = await getNotifications();
+        setNotifications(list || []);
+      }
+    } catch {
+      setUnreadCount(0);
+      if (dropdownOpen) {
+        setNotifications([]);
+      }
     }
   };
 
@@ -115,9 +126,10 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
     window.dispatchEvent(new CustomEvent("theme_changed", { detail: theme }));
   };
 
-  const handleAction = (action: 'profile' | 'system' | 'logout') => {
+  const handleAction = (action: 'profile' | 'info' | 'system' | 'logout') => {
     setDropdownOpen(false);
     if (action === 'profile') setShowProfile(true);
+    if (action === 'info') setShowInfo(true);
     if (action === 'system') setShowSystem(true);
     if (action === 'logout') onLogout();
   };
@@ -128,7 +140,7 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   };
 
-  const handleDeleteNotif = async (e: React.MouseEvent, id: number) => {
+  const handleDeleteNotif = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     await deleteNotification(id);
     setNotifications(prev => prev.filter(n => n.id !== id));
@@ -244,48 +256,6 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
                 <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                 {t('nav.profile')}
               </button>
-              
-              <button onClick={() => handleAction('system')} className={`w-full text-left px-4 py-2.5 rounded-xl font-bold flex items-center gap-3 transition-colors ${
-                isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
-              }`}>
-                <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                {t('nav.system')}
-              </button>
-
-              {/* Sub-menu Theme */}
-              <div className="relative group/theme">
-                <button className={`w-full text-left px-4 py-2.5 rounded-xl font-bold flex items-center justify-between gap-3 transition-colors ${
-                  isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
-                    <span>{t('nav.theme')}</span>
-                  </div>
-                  <svg className="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
-                
-                <div className={`absolute left-full top-0 ml-1 w-44 rounded-2xl shadow-2xl py-2 opacity-0 invisible group-hover/theme:opacity-100 group-hover/theme:visible transition-all duration-200 ${
-                  isGlass ? 'glass-dropdown' : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'
-                }`}>
-                  {['light', 'dark', 'glass'].map((theme) => (
-                    <button 
-                      key={theme}
-                      onClick={() => setTheme(theme as AppTheme)} 
-                      className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold flex items-center justify-between gap-3 transition-colors ${
-                        isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {theme === 'light' && <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>}
-                        {theme === 'dark' && <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>}
-                        {theme === 'glass' && <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>}
-                        <span>{t(`nav.theme.${theme}`)}</span>
-                      </div>
-                      {currentTheme === theme && <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               {/* Sub-menu Language */}
               <div className="relative group/lang">
@@ -302,7 +272,10 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
                 <div className={`absolute left-full top-0 ml-1 w-44 rounded-2xl shadow-2xl py-2 opacity-0 invisible group-hover/lang:opacity-100 group-hover/lang:visible transition-all duration-200 ${
                   isGlass ? 'glass-dropdown' : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'
                 }`}>
-                  {['vi', 'en'].map((lang) => (
+                  {[
+                    { id: 'vi' as const, labelKey: 'lang.vi' as LanguageTranslationKey },
+                    { id: 'en' as const, labelKey: 'lang.en' as LanguageTranslationKey },
+                  ].map(({ id: lang, labelKey }) => (
                     <button 
                       key={lang}
                       onClick={() => { setLanguage(lang as any); setDropdownOpen(false); }} 
@@ -312,13 +285,66 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-sm">{lang.toUpperCase()}</span>
-                        <span>{t(`lang.${lang}`)}</span>
+                        <span>{t(labelKey)}</span>
                       </div>
                       {language === lang && <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>}
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Sub-menu Theme */}
+              <div className="relative group/theme">
+                <button className={`w-full text-left px-4 py-2.5 rounded-xl font-bold flex items-center justify-between gap-3 transition-colors ${
+                  isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+                    <span>{t('nav.theme')}</span>
+                  </div>
+                  <svg className="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                
+                <div className={`absolute left-full top-0 ml-1 w-44 rounded-2xl shadow-2xl py-2 opacity-0 invisible group-hover/theme:opacity-100 group-hover/theme:visible transition-all duration-200 ${
+                  isGlass ? 'glass-dropdown' : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'
+                }`}>
+                  {[
+                    { id: 'light' as const, labelKey: 'nav.theme.light' as ThemeTranslationKey },
+                    { id: 'dark' as const, labelKey: 'nav.theme.dark' as ThemeTranslationKey },
+                    { id: 'glass' as const, labelKey: 'nav.theme.glass' as ThemeTranslationKey },
+                  ].map(({ id: theme, labelKey }) => (
+                    <button 
+                      key={theme}
+                      onClick={() => setTheme(theme as AppTheme)} 
+                      className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold flex items-center justify-between gap-3 transition-colors ${
+                        isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {theme === 'light' && <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>}
+                        {theme === 'dark' && <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>}
+                        {theme === 'glass' && <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>}
+                        <span>{t(labelKey)}</span>
+                      </div>
+                      {currentTheme === theme && <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={() => handleAction('system')} className={`w-full text-left px-4 py-2.5 rounded-xl font-bold flex items-center gap-3 transition-colors ${
+                isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+              }`}>
+                <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                {t('nav.system')}
+              </button>
+
+              <button onClick={() => handleAction('info')} className={`w-full text-left px-4 py-2.5 rounded-xl font-bold flex items-center gap-3 transition-colors ${
+                isGlass ? 'text-white hover:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+              }`}>
+                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                {t('nav.info')}
+              </button>
             </div>
             
             <div className={`px-2 pt-2 border-t mt-1 ${isGlass ? 'border-white/10' : 'border-slate-100 dark:border-slate-700'}`}>
@@ -334,6 +360,7 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
       </div>
 
       {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
+      {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
       {showSystem && <SystemModal onClose={() => setShowSystem(false)} />}
     </>
   );

@@ -71,7 +71,7 @@ def update(
 # ------------------------------------------
 # DELETE /{id} — Xoá tài khoản
 # ------------------------------------------
-@router.delete("/{account_id}")
+@router.delete("/{account_id}", response_model=schemas.DeleteResponse)
 def delete(
     account_id: UUID,
     current_user: models.User = Depends(get_current_user),

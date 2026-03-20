@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getBudgetReport, upsertBudget, listCategories, deleteBudget } from "../service/api";
 import GlassSelect from "./GlassSelect";
+import ConfirmModal from "./ConfirmModal";
 import { useGlassTheme } from "../hooks/useGlassTheme";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -21,6 +22,7 @@ export default function BudgetsTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingBudget, setEditingBudget] = useState<any | null>(null);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -34,15 +36,18 @@ export default function BudgetsTab() {
 
   const fetchData = async () => {
     setLoading(true);
-    const data = await getBudgetReport(month, year);
-    if (data) setReports(data);
-    
-    const cats = await listCategories();
-    if (cats) {
-      // Only expense categories for budgets
-      setCategories(cats.filter((c: any) => c.type === 'expense'));
+    try {
+      const [data, cats] = await Promise.all([getBudgetReport(month, year), listCategories()]);
+      setReports(data || []);
+      if (cats) {
+        // Only expense categories for budgets
+        setCategories(cats.filter((c: any) => c.type === 'expense'));
+      }
+    } catch (err: any) {
+      setMessage({ text: err.message || "Không thể tải dữ liệu ngân sách", type: "error" });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleOpenModal = (budget?: any) => {
@@ -83,17 +88,17 @@ export default function BudgetsTab() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa mục ngân sách này?")) {
-      try {
-        await deleteBudget(id);
-        setMessage({ text: "Đã xóa ngân sách thành công!", type: "success" });
-        fetchData();
-      } catch (err: any) {
-        console.error("Lỗi khi xóa:", err);
-        const errorMsg = err.response?.data?.detail || err.message || "Lỗi không xác định";
-        setMessage({ text: `Lỗi khi xóa: ${errorMsg}`, type: "error" });
-      }
+  const confirmDeleteBudget = async () => {
+    if (!confirmDeleteId) return;
+    try {
+      await deleteBudget(confirmDeleteId);
+      setMessage({ text: "Đã xóa ngân sách thành công!", type: "success" });
+      fetchData();
+    } catch (err: any) {
+      const errorMsg = err.message || "Lỗi không xác định";
+      setMessage({ text: `Lỗi khi xóa: ${errorMsg}`, type: "error" });
+    } finally {
+      setConfirmDeleteId(null);
       setTimeout(() => setMessage(null), 3000);
     }
   };
@@ -191,7 +196,7 @@ export default function BudgetsTab() {
                       <button onClick={() => handleOpenModal(report)} className="p-1.5 rounded-lg hover:bg-white/10 text-blue-500">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
                       </button>
-                      <button onClick={() => handleDelete(report.budget_id)} className="p-1.5 rounded-lg hover:bg-white/10 text-rose-500">
+                      <button onClick={() => setConfirmDeleteId(report.budget_id)} className="p-1.5 rounded-lg hover:bg-white/10 text-rose-500">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.34 4m-4.74 0 .34-4m-4.78 4.48 1.14 6.6a2.25 2.25 0 0 0 2.244 2.077H8.084a2.25 2.25 0 0 0 2.244-2.077L11.47 5.48m-4.78 4.48H12m4.78-4.48H19.5" /></svg>
                       </button>
                     </div>
@@ -306,6 +311,13 @@ export default function BudgetsTab() {
           </div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="Xác nhận xóa ngân sách"
+        message="Bạn có chắc chắn muốn xóa mục ngân sách này?"
+        onConfirm={confirmDeleteBudget}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

@@ -71,7 +71,7 @@ def update(
 # ------------------------------------------
 # DELETE /{id} — Xoá danh mục
 # ------------------------------------------
-@router.delete("/{category_id}")
+@router.delete("/{category_id}", response_model=schemas.DeleteResponse)
 def delete(
     category_id: UUID,
     current_user: models.User = Depends(get_current_user),

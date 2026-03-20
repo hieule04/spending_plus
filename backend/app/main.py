@@ -9,16 +9,15 @@ Chỉ thực hiện 3 việc:
 Toàn bộ logic nghiệp vụ nằm trong thư mục app/.
 """
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-import time
 
 # Import config & database
 from app.core.config import settings
 from app.database import get_db, engine
-from app import models
+from app import models, schemas
 
 # Import tất cả các routers
 from app.api import auth, accounts, categories, transactions, users, budgets, stats, notifications, savings
@@ -65,13 +64,13 @@ app.include_router(savings.router, prefix="/api", tags=["Savings"])
 # 4. SYSTEM ENDPOINTS
 # ==========================================
 
-@app.get("/", tags=["System"])
+@app.get("/", tags=["System"], response_model=schemas.SystemHealthResponse)
 def read_root():
     """Health check — kiểm tra backend có đang chạy không."""
     return {"message": "Spending Plus Backend is running!"}
 
 
-@app.get("/test-db", tags=["System"])
+@app.get("/test-db", tags=["System"], response_model=schemas.DatabaseConnectionResponse)
 def test_database_connection(db: Session = Depends(get_db)):
     """Kiểm tra kết nối tới Supabase PostgreSQL."""
     try:

@@ -39,23 +39,19 @@ def update_savings_goal(
         raise HTTPException(status_code=404, detail="Không tìm thấy sổ tiết kiệm")
     return goal
 
-@router.delete("/savings/{goal_id}")
+@router.delete("/savings/{goal_id}", response_model=schemas.MessageResponse)
 def delete_savings_goal(
     goal_id: UUID,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(deps.get_current_user)
 ):
     """Xóa sổ tiết kiệm."""
-    print(f"DEBUG: Yêu cầu xóa goal_id={goal_id} từ user_id={current_user.id}")
     try:
         success = crud_savings.delete_savings_goal(db, goal_id, current_user.id)
         if not success:
-            print(f"DEBUG: Không tìm thấy goal_id={goal_id} hoặc không thuộc user này.")
             raise HTTPException(status_code=404, detail="Không tìm thấy sổ tiết kiệm hoặc bạn không có quyền xóa.")
-        print(f"DEBUG: Xóa thành công goal_id={goal_id}")
         return {"message": "Đã xóa sổ tiết kiệm"}
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"DEBUG: Lỗi nghiêm trọng khi xóa goal: {str(e)}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống khi xóa: {str(e)}")
