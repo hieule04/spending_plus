@@ -8,6 +8,7 @@ from uuid import UUID
 from decimal import Decimal
 from sqlalchemy.orm import Session
 
+from sqlalchemy import func
 from app import models, schemas
 
 
@@ -32,7 +33,7 @@ def apply_balance(
         account.balance = account.balance + amt if not reverse else account.balance - amt
     elif txn_type == "expense":
         account.balance = account.balance - amt if not reverse else account.balance + amt
-    # transfer có thể mở rộng sau
+    # Logic cho các loại giao dịch khác có thể mở rộng sau
 
 
 # ==========================================
@@ -71,15 +72,124 @@ def create_transaction(
         user_id=user_id,
         account_id=data.account_id,
         category_id=data.category_id,
+        savings_goal_id=data.savings_goal_id,
     )
     db.add(new_txn)
 
     # Cập nhật balance
     apply_balance(account, data.amount, data.type)
 
+    # Cập nhật sổ tiết kiệm (Savings Goal) nếu có liên kết
+    if data.savings_goal_id:
+        goal = db.query(models.SavingsGoal).filter(
+            models.SavingsGoal.id == data.savings_goal_id,
+            models.SavingsGoal.user_id == user_id
+        ).first()
+        if goal:
+            # - Nạp tiền vào sổ (expense từ ví -> vào sổ)
+            # - Rút tiền từ sổ (income vào ví <- từ sổ)
+            if data.type == "expense":
+                goal.current_amount += data.amount
+            elif data.type == "income":
+                goal.current_amount -= data.amount
+            
+            # Kiểm tra trạng thái hoàn thành
+            newly_completed = False
+            if goal.current_amount >= goal.target_amount:
+                if not goal.is_completed:
+                    newly_completed = True
+                goal.is_completed = True
+            else:
+                goal.is_completed = False
+            
+            # Nếu vừa hoàn thành, tạo thông báo
+            if newly_completed:
+                new_notif = models.Notification(
+                    user_id=user_id,
+                    message=f"Chúc mừng! Bạn đã hoàn thành mục tiêu tiết kiệm: {goal.name}! 🎉",
+                    type="savings_complete",
+                    is_read=False
+                )
+                db.add(new_notif)
+
     db.commit()
     db.refresh(new_txn)
+
+    # Budget Notification Check
+    if data.type == "expense" and data.category_id:
+        check_budget_thresholds(db, user_id, data.category_id, data.date)
+
     return new_txn
+
+
+def check_budget_thresholds(db: Session, user_id: UUID, category_id: UUID, date) -> None:
+    """Kiểm tra xem giao dịch mới có làm chi tiêu vượt ngưỡng ngân sách không."""
+    month = date.month
+    year = date.year
+
+    # 1. Lấy ngân sách
+    budget = db.query(models.Budget).filter(
+        models.Budget.user_id == user_id,
+        models.Budget.category_id == category_id,
+        models.Budget.month == month,
+        models.Budget.year == year
+    ).first()
+
+    if not budget or float(budget.amount_limit) <= 0:
+        return
+
+    # 2. Kiểm tra settings của user
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user or not user.allow_notifications:
+        return
+
+    # 3. Tính tổng chi tiêu trong tháng
+    total_spent = db.query(func.sum(models.Transaction.amount)).filter(
+        models.Transaction.user_id == user_id,
+        models.Transaction.category_id == category_id,
+        models.Transaction.type == "expense",
+        func.extract('month', models.Transaction.date) == month,
+        func.extract('year', models.Transaction.date) == year
+    ).scalar() or Decimal("0.0")
+
+    total_spent = float(total_spent)
+    limit = float(budget.amount_limit)
+    percent = (total_spent / limit) * 100
+
+    # 4. Xác định ngưỡng
+    thresholds = [
+        (100, "budget_100", f"Bạn đã dùng hết 100% ngân sách cho danh mục này trong tháng {month}/{year}!"),
+        (90, "budget_90", f"Bạn đã dùng quá 90% ngân sách cho danh mục này trong tháng {month}/{year}."),
+        (50, "budget_50", f"Bạn đã dùng quá 50% ngân sách cho danh mục này trong tháng {month}/{year}."),
+    ]
+
+    for threshold_val, threshold_type, message in thresholds:
+        if percent >= threshold_val:
+            # 5. Kiểm tra xem đã thông báo cho ngưỡng này trong tháng này chưa
+            cat = db.query(models.Category).filter(models.Category.id == category_id).first()
+            cat_name = cat.name if cat else "danh mục này"
+            full_message = message.replace("danh mục này", f"danh mục '{cat_name}'")
+
+            # Tìm xem đã có thông báo cùng loại cho category này trong tháng này chưa
+            # Ta check message HOẶC có thể check created_at nếu muốn tuyệt đối
+            existing_notif = db.query(models.Notification).filter(
+                models.Notification.user_id == user_id,
+                models.Notification.type == threshold_type,
+                models.Notification.message == full_message
+            ).first()
+
+            if not existing_notif:
+                new_notif = models.Notification(
+                    user_id=user_id,
+                    message=full_message,
+                    type=threshold_type,
+                    is_read=False
+                )
+                db.add(new_notif)
+                db.commit()
+            
+            # Chỉ thông báo ngưỡng cao nhất vừa đạt được trong lần chi tiêu này
+            break 
 
 
 def update_transaction(

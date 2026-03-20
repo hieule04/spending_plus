@@ -6,11 +6,12 @@ import CategoriesTab from "./components/CategoriesTab"
 import TransactionsTab from "./components/TransactionsTab"
 import DashboardTab from "./components/DashboardTab"
 import BudgetsTab from "./components/BudgetsTab"
+import SavingsTab from "./components/SavingsTab"
 import TopBar from "./components/TopBar"
 import "./App.css"
 import { useLanguage } from "./context/LanguageContext"
 
-type TabType = 'system' | 'transactions' | 'accounts' | 'categories' | 'budgets' | 'info';
+type TabType = 'system' | 'transactions' | 'savings' | 'accounts' | 'categories' | 'budgets' | 'info';
 
 function App() {
   const { t, language } = useLanguage();
@@ -53,6 +54,7 @@ function App() {
   const tabs: { id: TabType; label: string }[] = [
     { id: 'system',       label: t('nav.dashboard') },
     { id: 'transactions', label: t('nav.transactions') },
+    { id: 'savings',      label: t('nav.savings') },
     { id: 'budgets',      label: t('nav.budgets') },
     { id: 'accounts',     label: t('nav.accounts') },
     { id: 'categories',   label: t('nav.categories') },
@@ -245,6 +247,7 @@ function App() {
           <div className="animate-fade-in h-full">
             {activeTab === 'system' && <DashboardTab />}
             {activeTab === 'transactions' && <TransactionsTab />}
+            {activeTab === 'savings' && <SavingsTab />}
             {activeTab === 'budgets' && <BudgetsTab />}
             {activeTab === 'accounts' && <AccountsTab />}
             {activeTab === 'categories' && <CategoriesTab />}

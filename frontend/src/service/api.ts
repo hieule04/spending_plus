@@ -148,14 +148,17 @@ export const listTransactions = async () => {
   }
 };
 
-export const createTransaction = async (data: {
+export interface Transaction {
   amount: number;
   type: string;
   date: string;
   note?: string;
   account_id: string;
   category_id?: string;
-}) => {
+  savings_goal_id?: string;
+}
+
+export const createTransaction = async (data: Transaction) => {
   try {
     const response = await api.post("/api/transactions/", data);
     window.dispatchEvent(new Event("refresh_transactions"));
@@ -248,5 +251,113 @@ export const upsertBudget = async (data: { amount_limit: number; month: number; 
     return response.data;
   } catch (error) {
     handleApiError(error, "Cập nhật ngân sách thất bại.");
+  }
+};
+
+// ==========================================
+// 8. Notifications
+// ==========================================
+
+export const getUnreadCount = async () => {
+  try {
+    const response = await api.get("/api/notifications/unread-count");
+    return response.data.unread_count;
+  } catch (error) {
+    console.error("Lỗi khi lấy số lượng thông báo:", error);
+    return 0;
+  }
+};
+
+export const getNotifications = async () => {
+  try {
+    const response = await api.get("/api/notifications");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy thông báo:", error);
+    return [];
+  }
+};
+
+export const markNotificationsAsRead = async () => {
+  try {
+    const response = await api.put("/api/notifications/mark-as-read");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi đánh dấu đã đọc:", error);
+    return null;
+  }
+};
+
+export const deleteNotification = async (id: number) => {
+  try {
+    const response = await api.delete(`/api/notifications/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi xóa thông báo:", error);
+    return null;
+  }
+};
+
+export const clearNotifications = async () => {
+  try {
+    const response = await api.delete("/api/notifications");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi xóa tất cả thông báo:", error);
+    return null;
+  }
+};
+
+// ==========================================
+// Savings Goal API
+// ==========================================
+
+export const getSavings = async () => {
+  try {
+    const response = await api.get("/api/savings");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách tiết kiệm:", error);
+    return [];
+  }
+};
+
+export const createSaving = async (data: any) => {
+  try {
+    const response = await api.post("/api/savings", data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo sổ tiết kiệm:", error);
+    return null;
+  }
+};
+
+export const updateSaving = async (id: string, data: any) => {
+  try {
+    const response = await api.put(`/api/savings/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật sổ tiết kiệm:", error);
+    return null;
+  }
+};
+
+export const deleteSaving = async (id: string) => {
+  try {
+    const response = await api.delete(`/api/savings/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Link error deleteSaving:", error);
+    throw error;
+  }
+};
+
+export const deleteBudget = async (id: string) => {
+  try {
+    const response = await api.delete(`/api/budgets/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi xóa ngân sách:", error);
+    throw error;
   }
 };

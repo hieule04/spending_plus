@@ -23,6 +23,7 @@ class User(Base):
     full_name = Column(String, nullable=True)
     avatar_url = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
+    allow_notifications = Column(Boolean, default=True)
 
     created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
     updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -32,6 +33,8 @@ class User(Base):
     categories = relationship("Category", back_populates="user")
     transactions = relationship("Transaction", back_populates="user")
     budgets = relationship("Budget", back_populates="user")
+    notifications = relationship("Notification", back_populates="user")
+    savings_goals = relationship("SavingsGoal", back_populates="user")
 
 
 class Account(Base):
@@ -111,6 +114,7 @@ class Transaction(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
+    savings_goal_id = Column(UUID(as_uuid=True), ForeignKey("savings_goals.id", ondelete="SET NULL"), nullable=True)
 
     created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
     updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -119,3 +123,37 @@ class Transaction(Base):
     user = relationship("User", back_populates="transactions")
     account = relationship("Account", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
+    savings_goal = relationship("SavingsGoal", back_populates="transactions")
+
+
+class Notification(Base):
+    """Bảng thông báo ngân sách."""
+    __tablename__ = "notifications"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    message = Column(String, nullable=False)
+    type = Column(String, nullable=False)  # budget_50, budget_90, budget_100
+    is_read = Column(Boolean, default=False)
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+
+    user = relationship("User", back_populates="notifications")
+
+
+class SavingsGoal(Base):
+    """Bảng mục tiêu tiết kiệm."""
+    __tablename__ = "savings_goals"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    name = Column(String, nullable=False)
+    target_amount = Column(Numeric(15, 2), nullable=False)
+    current_amount = Column(Numeric(15, 2), default=0.0)
+    is_completed = Column(Boolean, default=False)
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+    updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="savings_goals")
+    transactions = relationship("Transaction", back_populates="savings_goal")

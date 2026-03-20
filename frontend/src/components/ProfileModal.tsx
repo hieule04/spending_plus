@@ -11,19 +11,20 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [allowNotifications, setAllowNotifications] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
   const isGlass = useGlassTheme();
 
   useEffect(() => {
-    const fetchUser = async () => { setLoading(true); const data = await getProfile(); if (data) { setFullName(data.full_name || ""); setEmail(data.email || ""); setAvatarUrl(data.avatar_url || ""); } setLoading(false); };
+    const fetchUser = async () => { setLoading(true); const data = await getProfile(); if (data) { setFullName(data.full_name || ""); setEmail(data.email || ""); setAvatarUrl(data.avatar_url || ""); setAllowNotifications(data.allow_notifications !== false); } setLoading(false); };
     fetchUser();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setMessage(null);
-    const updateData: any = { full_name: fullName, email, avatar_url: avatarUrl };
+    const updateData: any = { full_name: fullName, email, avatar_url: avatarUrl, allow_notifications: allowNotifications };
     if (password.trim() !== "") updateData.password = password;
     const data = await updateProfile(updateData);
     if (data) { setMessage({ text: t('profile.msg.update_success'), type: "success" }); setPassword(""); } else { setMessage({ text: t('profile.msg.update_error'), type: "error" }); }
@@ -83,6 +84,21 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
             <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.full_name')}</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} placeholder={t('profile.form.placeholder.full_name')} /></div>
             <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.email')}</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} /></div>
             <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.password_help')}</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} placeholder="••••••••" /></div>
+
+            {/* Notification Toggle */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border ${borderClass} ${isGlass ? 'bg-white/5' : 'bg-slate-50/50 dark:bg-slate-900/50'}`}>
+              <div>
+                <p className={`font-bold ${isGlass ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>Thông báo ngân sách</p>
+                <p className={`text-xs ${isGlass ? 'text-white/60' : 'text-slate-500 dark:text-slate-400'}`}>Nhận cảnh báo khi chi tiêu vượt ngưỡng</p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setAllowNotifications(!allowNotifications)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${allowNotifications ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${allowNotifications ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
 
             <button type="submit" disabled={saving} className={`w-full py-3 px-4 rounded-xl text-white font-bold transition-transform shadow-lg ${saving ? "bg-blue-400 cursor-wait" : "bg-blue-600 hover:bg-blue-500 active:scale-[0.98] shadow-blue-500/30"}`}>
               {saving ? t('common.saving') : t('profile.save_changes')}

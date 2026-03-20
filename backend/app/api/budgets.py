@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import List
@@ -91,3 +92,21 @@ def get_budgets(
     """
     budgets = db.query(Budget).filter(Budget.user_id == current_user.id).all()
     return budgets
+@router.delete("/{budget_id}")
+def delete_budget(
+    budget_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Xóa một mục ngân sách."""
+    budget = db.query(Budget).filter(
+        Budget.id == budget_id,
+        Budget.user_id == current_user.id
+    ).first()
+    
+    if not budget:
+        raise HTTPException(status_code=404, detail="Không tìm thấy ngân sách")
+    
+    db.delete(budget)
+    db.commit()
+    return {"message": "Đã xóa ngân sách thành công"}

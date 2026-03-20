@@ -13,6 +13,7 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+import time
 
 # Import config & database
 from app.core.config import settings
@@ -20,7 +21,7 @@ from app.database import get_db, engine
 from app import models
 
 # Import tất cả các routers
-from app.api import auth, accounts, categories, transactions, users, budgets, stats
+from app.api import auth, accounts, categories, transactions, users, budgets, stats, notifications, savings
 
 # ==========================================
 # 1. KHỞI TẠO APP
@@ -29,8 +30,7 @@ from app.api import auth, accounts, categories, transactions, users, budgets, st
 # Tạo bảng nếu chưa có (development only)
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title=settings.APP_TITLE)
-
+app = FastAPI(title="Spending Plus API")
 
 # ==========================================
 # 2. MIDDLEWARE
@@ -46,15 +46,6 @@ app.add_middleware(
 )
 
 
-# Middleware ghi log origin (hữu ích khi debug CORS)
-@app.middleware("http")
-async def log_origin(request: Request, call_next):
-    origin = request.headers.get("origin")
-    if origin:
-        print(f"[CORS] Request from: {origin}")
-    return await call_next(request)
-
-
 # ==========================================
 # 3. INCLUDE ROUTERS
 # ==========================================
@@ -66,6 +57,8 @@ app.include_router(categories.router, prefix="/api")
 app.include_router(transactions.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(budgets.router, prefix="/api/budgets", tags=["Budgets"])
+app.include_router(notifications.router, prefix="/api", tags=["Notifications"])
+app.include_router(savings.router, prefix="/api", tags=["Savings"])
 
 
 # ==========================================

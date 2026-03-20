@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getBudgetReport, upsertBudget, listCategories } from "../service/api";
+import { getBudgetReport, upsertBudget, listCategories, deleteBudget } from "../service/api";
 import GlassSelect from "./GlassSelect";
 import { useGlassTheme } from "../hooks/useGlassTheme";
 import { useLanguage } from "../context/LanguageContext";
@@ -19,6 +19,8 @@ export default function BudgetsTab() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [amountLimit, setAmountLimit] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<any | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -43,9 +45,16 @@ export default function BudgetsTab() {
     setLoading(false);
   };
 
-  const handleOpenModal = () => {
-    setSelectedCategory("");
-    setAmountLimit("");
+  const handleOpenModal = (budget?: any) => {
+    if (budget) {
+      setEditingBudget(budget);
+      setSelectedCategory(budget.category_id);
+      setAmountLimit(budget.amount_limit.toString());
+    } else {
+      setEditingBudget(null);
+      setSelectedCategory("");
+      setAmountLimit("");
+    }
     setIsModalOpen(true);
   };
 
@@ -53,16 +62,41 @@ export default function BudgetsTab() {
     e.preventDefault();
     if (!selectedCategory || !amountLimit) return;
     setIsSubmitting(true);
-    await upsertBudget({
-      amount_limit: parseFloat(amountLimit),
-      month,
-      year,
-      category_id: selectedCategory
-    });
-    setIsSubmitting(false);
-    setIsModalOpen(false);
+    try {
+      const res = await upsertBudget({
+        amount_limit: parseFloat(amountLimit),
+        month,
+        year,
+        category_id: selectedCategory
+      });
+      if (res) {
+        setMessage({ text: editingBudget ? "Cập nhật ngân sách thành công!" : "Thiết lập ngân sách thành công!", type: "success" });
+      }
+      setIsModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.detail || err.message || "Lỗi khi lưu ngân sách";
+      setMessage({ text: errorMsg, type: "error" });
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
   };
 
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa mục ngân sách này?")) {
+      try {
+        await deleteBudget(id);
+        setMessage({ text: "Đã xóa ngân sách thành công!", type: "success" });
+        fetchData();
+      } catch (err: any) {
+        console.error("Lỗi khi xóa:", err);
+        const errorMsg = err.response?.data?.detail || err.message || "Lỗi không xác định";
+        setMessage({ text: `Lỗi khi xóa: ${errorMsg}`, type: "error" });
+      }
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
   // Glass styling classes based on Liquid Glass iOS 26 requirements
   const gridCardClass = isGlass 
     ? "glass-card p-6" 
@@ -99,6 +133,16 @@ export default function BudgetsTab() {
           </div>
         </div>
       </div>
+
+      {message && (
+        <div className={`mb-6 p-4 rounded-2xl text-sm font-bold animate-fade-in ${
+          message.type === "success" 
+            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
+            : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+        }`}>
+          {message.text}
+        </div>
+      )}
 
       {loading ? (
         <div className={`text-center py-20 font-bold ${textSubClass}`}>{t('common.loading')}</div>
@@ -137,11 +181,23 @@ export default function BudgetsTab() {
             const exceedLimit = pct > 100;
 
             return (
-              <div key={report.category_id} className={gridCardClass}>
+              <div key={report.category_id} className={`${gridCardClass} group`}>
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className={`font-black text-xl truncate ${textTitleClass}`}>{report.category_name}</h3>
-                  <div className={`text-sm tracking-widest uppercase font-bold px-2 py-1 rounded-lg bg-opacity-20 ${textAlertClass} ${isGlass ? "bg-white/10" : "bg-slate-100 dark:bg-slate-900"}`}>
-                    {displayPercentage}%
+                  <div className="flex flex-col truncate">
+                    <h3 className={`font-black text-xl truncate ${textTitleClass}`}>{report.category_name}</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleOpenModal(report)} className="p-1.5 rounded-lg hover:bg-white/10 text-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+                      </button>
+                      <button onClick={() => handleDelete(report.budget_id)} className="p-1.5 rounded-lg hover:bg-white/10 text-rose-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.34 4m-4.74 0 .34-4m-4.78 4.48 1.14 6.6a2.25 2.25 0 0 0 2.244 2.077H8.084a2.25 2.25 0 0 0 2.244-2.077L11.47 5.48m-4.78 4.48H12m4.78-4.48H19.5" /></svg>
+                      </button>
+                    </div>
+                    <div className={`text-sm tracking-widest uppercase font-bold px-2 py-1 rounded-lg bg-opacity-20 ${textAlertClass} ${isGlass ? "bg-white/10" : "bg-slate-100 dark:bg-slate-900"}`}>
+                      {displayPercentage}%
+                    </div>
                   </div>
                 </div>
 
@@ -194,7 +250,9 @@ export default function BudgetsTab() {
               ? "glass-panel bg-white/10" 
               : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
           }`}>
-            <h3 className={`text-2xl font-black mb-6 ${textTitleClass}`}>{t('bg.setup_title')}</h3>
+            <h3 className={`text-2xl font-black mb-6 ${textTitleClass}`}>
+              {editingBudget ? t('bg.edit_title') : t('bg.setup_title')}
+            </h3>
             <p className={`text-sm mb-6 ${textSubClass}`}>{t('bg.for_month')} {month}/{year}</p>
             
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -22,6 +22,7 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
     is_active: bool = True
+    allow_notifications: bool = True
 
 
 class UserCreate(UserBase):
@@ -33,6 +34,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     password: Optional[str] = None
     avatar_url: Optional[str] = None
+    allow_notifications: Optional[bool] = None
 
 
 class UserLogin(BaseModel):
@@ -117,11 +119,12 @@ class CategoryResponse(CategoryBase):
 
 class TransactionBase(BaseModel):
     amount: Decimal
-    type: str = Field(..., description="'income', 'expense', hoặc 'transfer'")
+    type: str = Field(..., description="'income' hoặc 'expense'")
     date: datetime
     note: Optional[str] = None
     account_id: UUID
     category_id: Optional[UUID] = None
+    savings_goal_id: Optional[UUID] = None
 
 
 class TransactionCreate(TransactionBase):
@@ -135,6 +138,7 @@ class TransactionUpdate(BaseModel):
     note: Optional[str] = None
     account_id: Optional[UUID] = None
     category_id: Optional[UUID] = None
+    savings_goal_id: Optional[UUID] = None
 
 
 class TransactionResponse(TransactionBase):
@@ -176,6 +180,7 @@ class BudgetResponse(BudgetBase):
 
 
 class BudgetReportResponse(BaseModel):
+    budget_id: UUID
     category_id: UUID
     category_name: str
     amount_limit: Decimal
@@ -184,4 +189,55 @@ class BudgetReportResponse(BaseModel):
     percentage: float
     month: int
     year: int
+    model_config = model_config
+
+
+# ==========================================
+# 6. Notification Schemas
+# ==========================================
+
+class NotificationBase(BaseModel):
+    message: str
+    type: str
+    is_read: bool = False
+
+
+class NotificationResponse(NotificationBase):
+    id: UUID
+    user_id: UUID
+    created_at: datetime
+    model_config = model_config
+
+
+class NotificationUpdate(BaseModel):
+    is_read: Optional[bool] = None
+
+
+# ==========================================
+# 7. Savings Goal Schemas
+# ==========================================
+
+class SavingsGoalBase(BaseModel):
+    name: str
+    target_amount: Decimal
+    current_amount: Decimal = Decimal("0.0")
+    is_completed: bool = False
+
+
+class SavingsGoalCreate(SavingsGoalBase):
+    pass
+
+
+class SavingsGoalUpdate(BaseModel):
+    name: Optional[str] = None
+    target_amount: Optional[Decimal] = None
+    current_amount: Optional[Decimal] = None
+    is_completed: Optional[bool] = None
+
+
+class SavingsGoalResponse(SavingsGoalBase):
+    id: UUID
+    user_id: UUID
+    created_at: datetime
+    updated_at: datetime
     model_config = model_config

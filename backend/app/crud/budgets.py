@@ -58,6 +58,7 @@ def get_budget_report(db: Session, user_id: str, month: int, year: int):
         percentage = (total_spent / limit * 100) if limit > 0 else 0.0
         
         report.append({
+            "budget_id": budget.id,
             "category_id": budget.category_id,
             "category_name": cat_name,
             "amount_limit": limit,

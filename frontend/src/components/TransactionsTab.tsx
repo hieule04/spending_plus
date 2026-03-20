@@ -97,8 +97,7 @@ export default function TransactionsTab() {
                     onChange={(val) => setFormType(val)} 
                     options={[
                       { label: t('tx.type.expense'), value: "expense" },
-                      { label: t('tx.type.income'), value: "income" },
-                      { label: t('tx.type.transfer'), value: "transfer" }
+                      { label: t('tx.type.income'), value: "income" }
                     ]}
                   />
                 </div>
