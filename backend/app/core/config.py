@@ -52,6 +52,9 @@ class Settings:
     # --- CORS ---
     CORS_ORIGINS: list[str] = _parse_origins(os.getenv("CORS_ORIGINS", ""))
 
+    # --- Google AI ---
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
+
     # --- App ---
     APP_TITLE: str = "Spending Plus API"
 

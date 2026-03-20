@@ -331,3 +331,16 @@ class DashboardSummaryResponse(BaseModel):
     pie_data: list[PieDataItem]
     column_data: list[ColumnDataItem]
     line_data: list[LineDataItem]
+
+
+# ==========================================
+# 9. Chat AI Schemas
+# ==========================================
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000, description="Nội dung câu hỏi gửi đến AI")
+
+
+class ChatResponse(BaseModel):
+    reply: str = Field(..., description="Phản hồi từ AI")
+
