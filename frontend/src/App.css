@@ -49,166 +49,6 @@ body {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
-[data-theme="glass"] ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-}
-[data-theme="glass"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.3);
-}
-
-/* ========================================
-   LIQUID GLASS THEME – Mesh Gradient BG
-   ======================================== */
-/* The static mesh gradient background */
-.glass-bg {
-  background: #73b1f7;
-  background-size: cover;
-  background-attachment: fixed;
-}
-
-/* ========================================
-   GLASS UTILITY CLASSES
-   ======================================== */
-
-/* Primary glass surface – sidebar, header, modals */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.35);
-  border-left: 1.5px solid rgba(255, 255, 255, 0.25);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 0 40px rgba(255, 255, 255, 0.15);
-}
-
-/* Card surfaces – KPI cards, chart containers, category cards */
-.glass-card {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-  border-top: 1.2px solid rgba(255, 255, 255, 0.25);
-  border-left: 1.2px solid rgba(255, 255, 255, 0.15);
-  border-right: 1px solid rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-  box-shadow:
-    0 10px 30px -10px rgba(0, 0, 0, 0.25),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
-    0 0 25px rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glass-card:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-top: 1.2px solid rgba(255, 255, 255, 0.35);
-  border-left: 1.2px solid rgba(255, 255, 255, 0.25);
-  box-shadow:
-    0 20px 40px -10px rgba(0, 0, 0, 0.35),
-    0 0 35px rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px) scale(1.01);
-}
-
-/* Input fields */
-.glass-input {
-  background: rgba(255, 255, 255, 0.06) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
-}
-.glass-input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
-}
-.glass-input:focus {
-  border-color: rgba(255, 255, 255, 0.5) !important;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2), 0 0 20px rgba(255, 255, 255, 0.2) !important;
-}
-
-/* Buttons */
-.glass-btn {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #fff;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
-}
-.glass-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
-}
-
-/* Glass nav button active */
-.glass-nav-active {
-  background: rgba(255, 255, 255, 0.25) !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
-  color: #ffffff !important;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 0 20px rgba(255, 255, 255, 0.25);
-}
-
-/* Glass nav button inactive */
-.glass-nav-inactive {
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  color: rgba(255, 255, 255, 1) !important;
-}
-.glass-nav-inactive:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
-}
-
-/* Glass global text glow */
-[data-theme="glass"] {
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
-}
-
-/* Glass text helpers (kept for specific overrides) */
-[data-theme="glass"] .glass-text-primary {
-  color: #ffffff;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
-}
-[data-theme="glass"] .glass-text-secondary {
-  color: #ffffff;
-}
-
-/* Glass tooltip (for Recharts) */
-.glass-tooltip {
-  background: rgba(15, 20, 40, 0.85) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 16px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-}
-
-/* Glass table */
-[data-theme="glass"] .glass-table thead {
-  background: rgba(255, 255, 255, 0.04);
-}
-[data-theme="glass"] .glass-table tbody tr {
-  border-color: rgba(255, 255, 255, 0.06);
-}
-[data-theme="glass"] .glass-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* Glass dropdown menu */
-.glass-dropdown {
-  background: rgba(20, 25, 50, 0.85);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
-}
-
 /* Amount Badges for Financials */
 .amount-badge {
   display: inline-flex;
@@ -220,31 +60,27 @@ body {
   font-family: inherit;
   font-size: 0.875rem;
   letter-spacing: -0.01em;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   transition: all 0.2s ease;
 }
 
 .amount-badge-positive {
-  background: rgba(16, 185, 129, 0.2);
-  color: #c4ffde;
-  border: 1.5px solid rgba(16, 185, 129, 0.4);
-  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.dark .amount-badge-positive {
+  color: #34d399;
 }
 
 .amount-badge-negative {
-  background: rgba(244, 63, 94, 0.2);
-  color: #ffdce3;
-  border: 1.5px solid rgba(244, 63, 94, 0.4);
-  text-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
-  box-shadow: 0 0 15px rgba(244, 63, 94, 0.1);
+  background: rgba(244, 63, 94, 0.15);
+  color: #e11d48;
+  border: 1px solid rgba(244, 63, 94, 0.3);
 }
 
-/* Override select option colors for glass */
-[data-theme="glass"] select option {
-  background: #1a1040;
-  color: #fff;
+.dark .amount-badge-negative {
+  color: #fb7185;
 }
 
 /* Fade in animation */

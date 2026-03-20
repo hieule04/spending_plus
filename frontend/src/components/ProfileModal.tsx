@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { getProfile, updateProfile } from "../service/api";
-import { useGlassTheme } from "../hooks/useGlassTheme";
 import { useLanguage } from "../context/LanguageContext";
 
 interface ProfileModalProps { onClose: () => void; }
@@ -15,7 +14,6 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
-  const isGlass = useGlassTheme();
 
   useEffect(() => {
     const fetchUser = async () => { setLoading(true); const data = await getProfile(); if (data) { setFullName(data.full_name || ""); setEmail(data.email || ""); setAvatarUrl(data.avatar_url || ""); setAllowNotifications(data.allow_notifications !== false); } setLoading(false); };
@@ -36,27 +34,25 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
     if (file) { const reader = new FileReader(); reader.onloadend = () => { setAvatarUrl(reader.result as string); }; reader.readAsDataURL(file); }
   };
 
-  const overlayClass = isGlass ? 'bg-black/40 backdrop-blur-md' : 'bg-slate-900/20 dark:bg-black/50 backdrop-blur-sm';
-  const panelClass = isGlass ? 'glass-panel' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700';
-  const inputClass = isGlass ? 'glass-input rounded-xl' : 'bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white';
-  const labelClass = isGlass ? 'text-white text-sm font-medium' : 'text-sm font-black text-slate-700 dark:text-slate-300';
-  const headingClass = isGlass ? 'text-white drop-shadow-md' : 'text-slate-900 dark:text-white';
-  const borderClass = isGlass ? 'border-white/10' : 'border-slate-100 dark:border-slate-700';
+  const inputClass = 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white transition-all';
+  const labelClass = 'text-sm font-black text-slate-500 dark:text-slate-400';
 
   if (loading) {
     return (
-      <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${overlayClass}`}>
-        <div className={`p-8 rounded-2xl ${panelClass}`}><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div></div>
+      <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm`}>
+        <div className={`p-8 rounded-3xl bg-white dark:bg-slate-800 shadow-2xl border border-slate-200 dark:border-slate-700`}>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in ${overlayClass}`}>
-      <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${panelClass}`}>
-        <div className={`p-6 border-b ${borderClass} flex items-center justify-between`}>
-          <h2 className={`text-xl font-bold ${headingClass}`}>{t('profile.title')}</h2>
-          <button onClick={onClose} className={`p-2 rounded-full transition-colors ${isGlass ? 'text-white hover:text-white bg-white/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-700/50'}`}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm`}>
+      <div className={`w-full max-w-md rounded-3xl shadow-2xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
+        <div className={`p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between`}>
+          <h2 className={`text-xl font-bold text-slate-900 dark:text-white`}>{t('profile.title')}</h2>
+          <button onClick={onClose} className={`p-2 rounded-full transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-700/50`}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
@@ -69,13 +65,13 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="flex flex-col items-center mb-6">
               <div className="relative group cursor-pointer mb-3">
-                <div className={`w-24 h-24 rounded-full border-4 overflow-hidden ${isGlass ? 'border-white/10 bg-white/10' : 'border-slate-100 dark:border-slate-700 bg-slate-200 dark:bg-slate-600'}`}>
+                <div className={`w-28 h-28 rounded-3xl border-4 overflow-hidden border-white dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-xl`}>
                   {avatarUrl ? (<img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />) : (
-                    <svg className="w-full h-full text-slate-400 p-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <svg className="w-full h-full text-slate-300 p-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                   )}
                 </div>
-                <label className="absolute inset-0 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                  <span className="text-xs font-semibold">{t('profile.change_avatar')}</span>
+                <label className="absolute inset-0 bg-slate-900/60 text-white rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-all backdrop-blur-sm">
+                  <span className="text-xs font-bold uppercase tracking-widest">{t('profile.change_avatar')}</span>
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </label>
               </div>
@@ -86,21 +82,21 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
             <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.password_help')}</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} placeholder="••••••••" /></div>
 
             {/* Notification Toggle */}
-            <div className={`flex items-center justify-between p-4 rounded-xl border ${borderClass} ${isGlass ? 'bg-white/5' : 'bg-slate-50/50 dark:bg-slate-900/50'}`}>
+            <div className={`flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50`}>
               <div>
-                <p className={`font-bold ${isGlass ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>Thông báo ngân sách</p>
-                <p className={`text-xs ${isGlass ? 'text-white/60' : 'text-slate-500 dark:text-slate-400'}`}>Nhận cảnh báo khi chi tiêu vượt ngưỡng</p>
+                <p className={`font-bold text-slate-800 dark:text-slate-200`}>Thông báo ngân sách</p>
+                <p className={`text-xs text-slate-500 dark:text-slate-400`}>Nhận cảnh báo khi chi tiêu vượt ngưỡng</p>
               </div>
               <button 
                 type="button"
                 onClick={() => setAllowNotifications(!allowNotifications)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${allowNotifications ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${allowNotifications ? 'translate-x-6' : 'translate-x-1'}`} />
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${allowNotifications ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
 
-            <button type="submit" disabled={saving} className={`w-full py-3 px-4 rounded-xl text-white font-bold transition-transform shadow-lg ${saving ? "bg-blue-400 cursor-wait" : "bg-blue-600 hover:bg-blue-500 active:scale-[0.98] shadow-blue-500/30"}`}>
+            <button type="submit" disabled={saving} className={`w-full py-3.5 px-4 rounded-2xl text-white font-bold transition-all shadow-lg ${saving ? "bg-blue-400 cursor-wait" : "bg-blue-600 hover:bg-blue-500 active:scale-[0.98] shadow-blue-500/30"}`}>
               {saving ? t('common.saving') : t('profile.save_changes')}
             </button>
           </form>

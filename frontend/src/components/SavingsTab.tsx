@@ -3,14 +3,12 @@ import {
   getSavings, createSaving, updateSaving, deleteSaving,
   listAccounts, createTransaction
 } from "../service/api";
-import GlassSelect from "./GlassSelect";
+import FancySelect from "./FancySelect";
 import ConfirmModal from "./ConfirmModal";
-import { useGlassTheme } from "../hooks/useGlassTheme";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function SavingsTab() {
-  const isGlass = useGlassTheme();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   
   const [goals, setGoals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +37,7 @@ export default function SavingsTab() {
       setGoals(data || []);
       setAccounts(accs || []);
     } catch (err: any) {
-      setMessage({ text: err.message || "Không thể tải dữ liệu tiết kiệm", type: "error" });
+      setMessage({ text: err.message || t('common.loading'), type: "error" });
     } finally {
       setLoading(false);
     }
@@ -49,7 +47,7 @@ export default function SavingsTab() {
     fetchData();
     window.addEventListener("refresh_transactions", fetchData);
     return () => window.removeEventListener("refresh_transactions", fetchData);
-  }, []);
+  }, [t]);
 
   const handleOpenModal = (goal: any = null) => {
     setEditingGoal(goal);
@@ -68,20 +66,22 @@ export default function SavingsTab() {
       target_amount: parseFloat(targetAmount)
     };
 
-    if (editingGoal) {
-      const res = await updateSaving(editingGoal.id, data);
-      if (res) setMessage({ text: "Cập nhật sổ tiết kiệm thành công!", type: "success" });
-      else setMessage({ text: "Lỗi khi cập nhật sổ tiết kiệm", type: "error" });
-    } else {
-      const res = await createSaving(data);
-      if (res) setMessage({ text: "Tạo sổ tiết kiệm mới thành công!", type: "success" });
-      else setMessage({ text: "Lỗi khi tạo sổ tiết kiệm", type: "error" });
+    try {
+      if (editingGoal) {
+        await updateSaving(editingGoal.id, data);
+        setMessage({ text: t('sv.msg.update_success'), type: "success" });
+      } else {
+        await createSaving(data);
+        setMessage({ text: t('sv.msg.create_success'), type: "success" });
+      }
+      setIsModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      setMessage({ text: editingGoal ? t('sv.msg.update_error') : t('sv.msg.create_error'), type: "error" });
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setMessage(null), 3000);
     }
-    
-    setIsSubmitting(false);
-    setIsModalOpen(false);
-    fetchData();
-    setTimeout(() => setMessage(null), 3000);
   };
 
   const openActionModal = (goal: any, type: 'deposit' | 'withdraw') => {
@@ -97,64 +97,51 @@ export default function SavingsTab() {
     if (!amount || !selectedAccount || !selectedGoal) return;
     setIsSubmitting(true);
 
-    // Create a transaction linked to the savings goal
-    // Deposit: Expense from Account, adds to Savings
-    // Withdraw: Income to Account, subtracts from Savings
-    await createTransaction({
-      amount: parseFloat(amount),
-      type: actionType === 'deposit' ? 'expense' : 'income',
-      date: new Date().toISOString(),
-      note: `${actionType === 'deposit' ? 'Nạp tiền vào' : 'Rút tiền từ'} sổ: ${selectedGoal.name}`,
-      account_id: selectedAccount,
-      savings_goal_id: selectedGoal.id
-    });
-
-    setIsSubmitting(false);
-    setIsActionModalOpen(false);
-    fetchData();
-    // Refresh accounts too
-    window.dispatchEvent(new CustomEvent("refresh_accounts"));
+    try {
+      await createTransaction({
+        amount: parseFloat(amount),
+        type: actionType === 'deposit' ? 'expense' : 'income',
+        date: new Date().toISOString(),
+        note: `${actionType === 'deposit' ? t('sv.deposit_note') : t('sv.withdraw_note')}: ${selectedGoal.name}`,
+        account_id: selectedAccount,
+        savings_goal_id: selectedGoal.id
+      });
+      setIsActionModalOpen(false);
+      fetchData();
+      window.dispatchEvent(new CustomEvent("refresh_accounts"));
+    } catch (err: any) {
+      setMessage({ text: t('common.error_load') || "Error", type: "error" });
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
   };
 
   const confirmDeleteGoal = async () => {
     if (!confirmDeleteId) return;
     try {
       await deleteSaving(confirmDeleteId);
-      setMessage({ text: "Đã xóa sổ tiết kiệm thành công!", type: "success" });
+      setMessage({ text: t('sv.msg.delete_success'), type: "success" });
       fetchData();
     } catch (err: any) {
-      const errorMsg = err.message || "Lỗi không xác định";
-      setMessage({ text: `Lỗi khi xóa: ${errorMsg}`, type: "error" });
+      setMessage({ text: t('sv.msg.delete_error'), type: "error" });
     } finally {
       setConfirmDeleteId(null);
       setTimeout(() => setMessage(null), 5000);
     }
   };
 
-  const gridCardClass = isGlass 
-    ? "glass-card p-6" 
-    : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-3xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl";
-  
-  const textTitleClass = isGlass ? "text-white drop-shadow-md" : "text-slate-900 dark:text-white";
-  const textSubClass = isGlass ? "text-white drop-shadow-md" : "text-slate-500 dark:text-slate-400";
+  const gridCardClass = "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-3xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl";
+  const textTitleClass = "text-slate-900 dark:text-white";
+  const textSubClass = "text-slate-500 dark:text-slate-400";
 
   return (
     <div className="h-full flex flex-col relative w-full h-full p-2">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h2 className={`text-4xl font-extrabold tracking-tight ${textTitleClass}`}>Tiết kiệm</h2>
-          <p className={`mt-2 ${textSubClass}`}>Quản lý các mục tiêu tài chính của bạn</p>
+          <h2 className={`text-4xl font-extrabold tracking-tight ${textTitleClass}`}>{t('sv.title')}</h2>
+          <p className={`mt-2 ${textSubClass}`}>{t('sv.subtitle')}</p>
         </div>
-        
-        <button 
-          onClick={() => handleOpenModal()}
-          className={`px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all hover:scale-105 active:scale-95 ${
-            isGlass ? "bg-white/10 hover:bg-white/20 text-white border border-white/20" : "bg-blue-600 hover:bg-blue-500 text-white shadow-lg"
-          }`}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-          Tạo sổ mới
-        </button>
       </div>
       
       {message && (
@@ -168,17 +155,15 @@ export default function SavingsTab() {
       )}
 
       {loading ? (
-        <div className={`text-center py-20 font-bold ${textSubClass}`}>Đang tải...</div>
+        <div className={`text-center py-20 font-bold ${textSubClass}`}>{t('common.loading')}</div>
       ) : goals.length === 0 ? (
         <div className={`text-center py-20 rounded-3xl flex flex-col items-center justify-center ${gridCardClass}`}>
-          <p className={`text-lg font-bold mb-4 ${textTitleClass}`}>Bạn chưa có sổ tiết kiệm nào</p>
+          <p className={`text-lg font-bold mb-4 ${textTitleClass}`}>{t('sv.no_goals')}</p>
           <button 
             onClick={() => handleOpenModal()}
-            className={`px-6 py-3 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 ${
-              isGlass ? "bg-white/10 hover:bg-white/20 text-white border border-white/20" : "bg-blue-600 hover:bg-blue-500 text-white shadow-lg"
-            }`}
+            className={`px-6 py-3 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 bg-blue-600 hover:bg-blue-500 text-white shadow-lg`}
           >
-            Bắt đầu tiết kiệm ngay
+            {t('sv.start')}
           </button>
         </div>
       ) : (
@@ -186,33 +171,17 @@ export default function SavingsTab() {
           {goals.map((goal) => {
             const pct = (goal.current_amount / goal.target_amount) * 100;
             const isCompleted = goal.current_amount >= goal.target_amount;
-            
-            // Completion logic - Liquid Gold
-            const goldCardClass = isCompleted 
-                ? (isGlass 
-                    ? "bg-gradient-to-br from-amber-400/30 to-yellow-600/30 border-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.3)]" 
-                    : "bg-gradient-to-br from-amber-50 to-yellow-100 border-amber-200 shadow-amber-200/50")
-                : "";
-            
-            // Adjust text colors for completed goals (especially for "Liquid Gold" effect visibility)
-            const cardTitleClass = isCompleted 
-                ? (isGlass ? "text-amber-100 drop-shadow-sm" : "text-amber-900") 
-                : textTitleClass;
-            const cardSubClass = isCompleted 
-                ? (isGlass ? "text-amber-200/80" : "text-amber-700") 
-                : textSubClass;
+            const goldCardClass = isCompleted ? "bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800/50 shadow-amber-200/50" : "";
+            const cardTitleClass = isCompleted ? "text-amber-900 dark:text-amber-400" : textTitleClass;
+            const cardSubClass = isCompleted ? "text-amber-700 dark:text-amber-600" : textSubClass;
 
             return (
               <div key={goal.id} className={`${gridCardClass} ${goldCardClass} relative overflow-hidden group`}>
-                {isCompleted && (
-                    <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-400/20 rounded-full blur-2xl animate-pulse pointer-events-none"></div>
-                )}
-                
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className={`font-black text-xl truncate ${cardTitleClass}`}>{goal.name}</h3>
-                    <p className={`text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-amber-600 dark:text-amber-500' : 'text-blue-500'}`}>
-                        {isCompleted ? 'Mục tiêu hoàn thành! 🎉' : 'Đang thực hiện'}
+                    <p className={`text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-amber-600 dark:text-amber-400' : 'text-blue-500'}`}>
+                        {isCompleted ? t('sv.completed') : t('sv.in_progress')}
                     </p>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -220,7 +189,7 @@ export default function SavingsTab() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     </button>
                     <button onClick={() => setConfirmDeleteId(goal.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-rose-500">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 2 0 00-1-1h-4a1 2 0 00-1 1v3M4 7h16"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-.355 5.945a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.347-9Zm5.485.058a.75.75 0 0 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z" clipRule="evenodd" /></svg>
                     </button>
                   </div>
                 </div>
@@ -236,8 +205,7 @@ export default function SavingsTab() {
                   </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className={`w-full h-3 rounded-full overflow-hidden mb-6 relative ${isGlass ? 'bg-white/10' : 'bg-slate-100 dark:bg-slate-900'}`}>
+                <div className={`w-full h-3 rounded-full overflow-hidden mb-6 relative bg-slate-100 dark:bg-slate-900`}>
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ease-in-out ${isCompleted ? 'bg-gradient-to-r from-amber-400 to-yellow-600' : 'bg-gradient-to-r from-blue-400 to-indigo-600'}`} 
                     style={{ width: `${Math.min(pct, 100)}%` }} 
@@ -245,129 +213,86 @@ export default function SavingsTab() {
                 </div>
 
                 <div className="flex gap-3">
-                  <button 
-                    onClick={() => openActionModal(goal, 'deposit')}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                      isGlass ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600'
-                    }`}
-                  >
+                  <button onClick={() => openActionModal(goal, 'deposit')} className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 transition-all active:scale-95`}>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    Nạp tiền
+                    {t('sv.deposit')}
                   </button>
-                  <button 
-                    onClick={() => openActionModal(goal, 'withdraw')}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                      isGlass ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300' : 'bg-rose-50 hover:bg-rose-100 text-rose-600'
-                    }`}
-                  >
+                  <button onClick={() => openActionModal(goal, 'withdraw')} className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 transition-all active:scale-95`}>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path></svg>
-                    Rút tiền
+                    {t('sv.withdraw')}
                   </button>
                 </div>
               </div>
             );
           })}
+
+          {/* Add New Savings Goal Card */}
+          <button 
+            onClick={() => handleOpenModal()}
+            className={`bg-transparent border-dashed border-2 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-3xl flex flex-col items-center justify-center min-h-[220px] transition-all group`}
+          >
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-all group-hover:scale-110 group-hover:rotate-90 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`}>
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            </div>
+            <span className={`font-black tracking-wide text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400`}>
+              {t('sv.add_new')}
+            </span>
+          </button>
         </div>
       )}
 
-      {/* Goal Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className={`relative w-full max-w-sm rounded-[2rem] p-8 animate-slide-up shadow-2xl ${
-            isGlass ? "glass-panel bg-white/10" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-          }`}>
-            <h3 className={`text-2xl font-black mb-6 ${textTitleClass}`}>{editingGoal ? 'Sửa sổ tiết kiệm' : 'Tạo sổ tiết kiệm mới'}</h3>
+          <div className={`relative w-full max-w-sm rounded-[2rem] p-8 animate-slide-up shadow-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
+            <h3 className={`text-2xl font-black mb-6 ${textTitleClass}`}>{editingGoal ? t('sv.edit') : t('sv.add_new')}</h3>
             <form onSubmit={handleSaveGoal} className="space-y-4">
               <div>
-                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>Tên sổ</label>
-                <input 
-                  type="text" 
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all ${
-                    isGlass ? "glass-input" : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
-                  }`}
-                  placeholder="Ví dụ: Mua iPhone 16..."
-                />
+                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('sv.goal_name')}</label>
+                <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" placeholder={t('sv.goal_placeholder')} />
               </div>
               <div>
-                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>Mục tiêu (VNĐ)</label>
-                <input 
-                  type="number" 
-                  required
-                  min="0"
-                  value={targetAmount}
-                  onChange={(e) => setTargetAmount(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all ${
-                    isGlass ? "glass-input" : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
-                  }`}
-                  placeholder="20,000,000"
-                />
+                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('sv.target_amount')}</label>
+                <input type="number" required min="0" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} className="w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" placeholder="20,000,000" />
               </div>
               <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all ${isGlass ? "bg-white/10 text-white" : "bg-slate-100 text-slate-700"}`}>Hủy</button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg">Lưu</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 px-4 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{t('common.cancel')}</button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500">{t('common.save')}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Action Modal (Deposit/Withdraw) */}
       {isActionModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsActionModalOpen(false)}></div>
-          <div className={`relative w-full max-w-sm rounded-[2rem] p-8 animate-slide-up shadow-2xl ${
-            isGlass ? "glass-panel bg-white/10" : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-          }`}>
-            <h3 className={`text-2xl font-black mb-2 ${textTitleClass}`}>{actionType === 'deposit' ? 'Nạp tiền' : 'Rút tiền'}</h3>
-            <p className={`text-sm mb-6 ${textSubClass}`}>Sổ: <span className={textTitleClass}>{selectedGoal?.name}</span></p>
-            
+          <div className={`relative w-full max-w-sm rounded-[2rem] p-8 animate-slide-up shadow-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
+            <h3 className={`text-2xl font-black mb-2 ${textTitleClass}`}>{actionType === 'deposit' ? t('sv.deposit') : t('sv.withdraw')}</h3>
+            <p className={`text-sm mb-6 ${textSubClass}`}>{t('sv.goal_name')}: <span className={textTitleClass}>{selectedGoal?.name}</span></p>
             <form onSubmit={handleAction} className="space-y-4">
               <div>
-                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>Chọn ví thực hiện</label>
-                <GlassSelect 
+                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('sv.action_select_wallet')}</label>
+                <FancySelect 
                   value={selectedAccount} 
                   onChange={(val) => setSelectedAccount(val)}
-                  options={accounts.map((a) => ({ 
-                    label: `${a.name} (${Number(a.balance).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ)`, 
-                    value: a.id 
-                  }))}
+                  options={accounts.map((a) => ({ label: `${a.name} (${Number(a.balance).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ)`, value: a.id }))}
                 />
               </div>
               <div>
-                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>Số tiền (VNĐ)</label>
-                <input 
-                  type="number" 
-                  required
-                  min="0"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all ${
-                    isGlass ? "glass-input" : "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
-                  }`}
-                  placeholder="0"
-                />
+                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('sv.action_amount')}</label>
+                <input type="number" required min="1" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full px-4 py-3 rounded-2xl outline-none font-medium bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" placeholder="100,000" />
               </div>
               <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setIsActionModalOpen(false)} className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all ${isGlass ? "bg-white/10 text-white" : "bg-slate-100 text-slate-700"}`}>Hủy</button>
-                <button type="submit" disabled={isSubmitting} className={`flex-1 py-3 px-4 rounded-xl font-bold text-white shadow-lg ${actionType === 'deposit' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'}`}>
-                    Xác nhận
-                </button>
+                <button type="button" onClick={() => setIsActionModalOpen(false)} className="flex-1 py-3 px-4 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{t('common.cancel')}</button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500">{t('common.confirm')}</button>
               </div>
             </form>
           </div>
         </div>
       )}
-      <ConfirmModal
-        isOpen={!!confirmDeleteId}
-        title="Xác nhận xóa sổ"
-        message="Bạn có chắc chắn muốn xóa sổ tiết kiệm này? Các giao dịch liên quan sẽ được giữ lại nhưng không còn liên kết với sổ."
-        onConfirm={confirmDeleteGoal}
-        onCancel={() => setConfirmDeleteId(null)}
-      />
+
+      <ConfirmModal isOpen={confirmDeleteId !== null} title={t('sv.delete_confirm_title')} message={t('sv.delete_confirm_msg')} onConfirm={confirmDeleteGoal} onCancel={() => setConfirmDeleteId(null)} />
     </div>
   );
 }

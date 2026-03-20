@@ -73,6 +73,7 @@ def create_transaction(
         account_id=data.account_id,
         category_id=data.category_id,
         savings_goal_id=data.savings_goal_id,
+        debt_id=data.debt_id,
     )
     db.add(new_txn)
 
@@ -111,6 +112,18 @@ def create_transaction(
                     is_read=False
                 )
                 db.add(new_notif)
+
+    # Cập nhật khoản nợ (Debt) nếu có liên kết
+    if data.debt_id and data.type == "expense":
+        debt = db.query(models.Debt).filter(
+            models.Debt.id == data.debt_id,
+            models.Debt.user_id == user_id
+        ).first()
+        if debt:
+            debt.remaining_amount = max(
+                Decimal("0.0"),
+                debt.remaining_amount - data.amount
+            )
 
     db.commit()
     db.refresh(new_txn)

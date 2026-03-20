@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { listTransactions, createTransaction, updateTransaction, deleteTransaction, listAccounts, listCategories } from "../service/api";
 import ConfirmModal from "./ConfirmModal";
-import GlassSelect from "./GlassSelect";
-import { useGlassTheme } from "../hooks/useGlassTheme";
+import FancySelect from "./FancySelect";
 import { useLanguage } from "../context/LanguageContext";
 
 interface Transaction { id: string; amount: number; type: string; date: string; note: string | null; account_id: string; category_id: string | null; created_at: string; }
@@ -25,7 +24,6 @@ export default function TransactionsTab() {
   const [formNote, setFormNote] = useState("");
   const [formAccountId, setFormAccountId] = useState("");
   const [formCategoryId, setFormCategoryId] = useState("");
-  const isGlass = useGlassTheme();
 
   const fetchData = useCallback(async () => {
     try {
@@ -63,13 +61,13 @@ export default function TransactionsTab() {
     return cat ? { name: cat.name, icon: cat.icon || "", color: cat.color || "" } : { name: "—", icon: "", color: "" };
   };
 
-  const cardClass = isGlass ? 'glass-card' : 'bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-600 shadow-sm';
-  const headingClass = isGlass ? 'text-white drop-shadow-md' : 'text-slate-900 dark:text-white';
-  const subTextClass = isGlass ? 'text-white drop-shadow-md' : 'text-slate-600 dark:text-slate-400 font-bold';
-  const inputClass = isGlass ? 'glass-input rounded-lg' : 'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500';
-  const tableWrapClass = isGlass ? 'glass-card overflow-x-auto rounded-2xl' : 'overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm';
-  const theadClass = isGlass ? 'bg-white/10' : 'bg-slate-100 dark:bg-slate-900/80';
-  const trHoverClass = isGlass ? 'hover:scale-[1.01] transition-all duration-200' : 'hover:bg-slate-700/30 transition-colors';
+  const cardClass = 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-3xl';
+  const headingClass = 'text-slate-900 dark:text-white';
+  const subTextClass = 'text-slate-500 dark:text-slate-400 font-bold';
+  const inputClass = 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 transition-all';
+  const tableWrapClass = 'overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl bg-white dark:bg-slate-800';
+  const theadClass = 'bg-slate-50 dark:bg-slate-900/80';
+  const trHoverClass = 'hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors';
 
   return (
     <div className="space-y-6">
@@ -92,9 +90,9 @@ export default function TransactionsTab() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.amount')}</label><input type="number" required min="0" step="0.01" value={formAmount} onChange={(e) => setFormAmount(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} placeholder="0" /></div>
                 <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.type')}</label>
-                  <GlassSelect 
-                    value={formType} 
-                    onChange={(val) => setFormType(val)} 
+                  <FancySelect
+                    value={formType}
+                    onChange={(val) => setFormType(val)}
                     options={[
                       { label: t('tx.type.expense'), value: "expense" },
                       { label: t('tx.type.income'), value: "income" }
@@ -105,16 +103,16 @@ export default function TransactionsTab() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.account')}</label>
-                  <GlassSelect 
-                    value={formAccountId} 
-                    onChange={(val) => setFormAccountId(val)} 
+                  <FancySelect
+                    value={formAccountId}
+                    onChange={(val) => setFormAccountId(val)}
                     options={accounts.map((acc) => ({ label: acc.name, value: acc.id }))}
                   />
                 </div>
                 <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.category_optional')}</label>
-                  <GlassSelect 
-                    value={formCategoryId} 
-                    onChange={(val) => setFormCategoryId(val)} 
+                  <FancySelect
+                    value={formCategoryId}
+                    onChange={(val) => setFormCategoryId(val)}
                     options={[{ label: t('common.none_selected'), value: "" }, ...categories.map((cat) => ({ label: `${cat.icon || ""} ${cat.name}`, value: cat.id }))]}
                   />
                 </div>
@@ -122,7 +120,7 @@ export default function TransactionsTab() {
               <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.note')}</label><input type="text" value={formNote} onChange={(e) => setFormNote(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} placeholder={t('tx.form.placeholder.note')} /></div>
               <div className="flex gap-3">
                 <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-colors text-sm">{editingId ? t('common.update') : t('common.save_transaction')}</button>
-                <button type="button" onClick={resetForm} className={`px-5 py-2 rounded-lg font-semibold transition-colors text-sm ${isGlass ? 'glass-btn' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>{t('common.cancel')}</button>
+                <button type="button" onClick={resetForm} className={`px-5 py-2 rounded-lg font-semibold transition-colors text-sm bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300`}>{t('common.cancel')}</button>
               </div>
             </form>
           )}
@@ -132,7 +130,7 @@ export default function TransactionsTab() {
       {loading ? (
         <div className={`text-center py-10 ${subTextClass}`}>{t('common.loading')}</div>
       ) : transactions.length === 0 ? (
-        <div className={`text-center py-10 rounded-2xl ${isGlass ? 'glass-card' : 'bg-slate-900/30 border border-slate-700'} ${subTextClass}`}>{t('tx.no_transactions_short')}</div>
+        <div className={`text-center py-10 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl ${subTextClass}`}>{t('tx.no_transactions_short')}</div>
       ) : (
         <div className={tableWrapClass}>
           <table className="w-full text-left">
@@ -146,21 +144,18 @@ export default function TransactionsTab() {
                 <th className={`px-4 py-3 text-xs font-semibold uppercase text-center ${subTextClass}`}>{t('tx.form.action')}</th>
               </tr>
             </thead>
-            <tbody className={`divide-y ${isGlass ? 'divide-white/5' : 'divide-slate-700/50'}`}>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {transactions.map((txn) => {
                 const catInfo = getCategoryInfo(txn.category_id);
                 const isIncome = txn.type === "income";
                 return (
                   <tr key={txn.id} className={trHoverClass}>
-                    <td className={`px-4 py-3 text-sm font-bold whitespace-nowrap ${isGlass ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>{new Date(txn.date).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</td>
+                    <td className={`px-4 py-3 text-sm font-bold whitespace-nowrap text-slate-700 dark:text-slate-300`}>{new Date(txn.date).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</td>
                     <td className="px-4 py-3 text-sm"><span className="flex items-center gap-1.5">{catInfo.icon && <span>{catInfo.icon}</span>}<span className={`font-bold ${headingClass}`}>{catInfo.name}</span></span></td>
-                    <td className={`px-4 py-3 text-sm font-medium truncate max-w-[160px] ${isGlass ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>{txn.note || "—"}</td>
-                    <td className={`px-4 py-3 text-sm font-bold ${isGlass ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>{getAccountName(txn.account_id)}</td>
+                    <td className={`px-4 py-3 text-sm font-medium truncate max-w-[160px] text-slate-500 dark:text-slate-400`}>{txn.note || "—"}</td>
+                    <td className={`px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300`}>{getAccountName(txn.account_id)}</td>
                     <td className="px-4 py-3 text-right">
-                      <span className={isGlass
-                        ? `amount-badge ${isIncome ? "amount-badge-positive" : "amount-badge-negative"}`
-                        : `font-mono font-semibold ${isIncome ? "text-emerald-400" : "text-red-400"}`
-                      }>
+                      <span className={`font-mono font-bold ${isIncome ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
                         {isIncome ? "+" : "-"}{Number(txn.amount).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} đ
                       </span>
                     </td>

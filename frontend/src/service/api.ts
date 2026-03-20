@@ -151,6 +151,7 @@ export interface Transaction {
   account_id: string;
   category_id?: string;
   savings_goal_id?: string;
+  debt_id?: string;
 }
 
 export const createTransaction = async (data: Transaction) => {
@@ -344,5 +345,56 @@ export const deleteBudget = async (id: string) => {
     return response.data;
   } catch (error) {
     handleApiError(error, "Xóa ngân sách thất bại.");
+  }
+};
+
+// ==========================================
+// 10. Debts (Khoản Nợ)
+// ==========================================
+
+export const listDebts = async () => {
+  try {
+    const response = await api.get("/api/debts");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Không thể tải danh sách khoản nợ.");
+  }
+};
+
+export const createDebt = async (data: {
+  creditor_name: string;
+  total_amount: number;
+  monthly_payment: number;
+  due_date: number;
+}) => {
+  try {
+    const response = await api.post("/api/debts", data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Tạo khoản nợ thất bại.");
+  }
+};
+
+export const updateDebt = async (id: string, data: {
+  creditor_name?: string;
+  total_amount?: number;
+  remaining_amount?: number;
+  monthly_payment?: number;
+  due_date?: number;
+}) => {
+  try {
+    const response = await api.put(`/api/debts/${id}`, data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Cập nhật khoản nợ thất bại.");
+  }
+};
+
+export const deleteDebt = async (id: string) => {
+  try {
+    const response = await api.delete(`/api/debts/${id}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Xóa khoản nợ thất bại.");
   }
 };

@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useGlassTheme } from "../hooks/useGlassTheme";
 
-interface GlassSelectProps {
+interface FancySelectProps {
   value: string | number;
   onChange: (value: any) => void;
   options: { label: string; value: string | number }[];
@@ -10,8 +9,7 @@ interface GlassSelectProps {
   disabled?: boolean;
 }
 
-export default function GlassSelect({ value, onChange, options, placeholder = "Chọn...", className = "", disabled = false }: GlassSelectProps) {
-  const isGlass = useGlassTheme();
+export default function FancySelect({ value, onChange, options, placeholder = "Chọn...", className = "", disabled = false }: FancySelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -27,24 +25,18 @@ export default function GlassSelect({ value, onChange, options, placeholder = "C
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const baseClass = isGlass 
-    ? "glass-input bg-white/10 border-white/20 text-white" 
-    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white";
+  const baseClass = "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white";
     
-  const dropdownClass = isGlass
-    ? "glass-dropdown"
-    : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl";
+  const dropdownClass = "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl";
 
-  const itemHoverClass = isGlass
-    ? "hover:bg-white/10"
-    : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200";
+  const itemHoverClass = "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200";
 
   return (
     <div className={`relative w-full ${className}`} ref={containerRef}>
       <button
         type="button"
         disabled={disabled}
-        className={`w-full px-4 py-3 rounded-2xl flex items-center justify-between font-medium outline-none transition-all ${baseClass} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-white/40'}`}
+        className={`w-full px-4 py-3 rounded-2xl flex items-center justify-between font-medium outline-none transition-all ${baseClass} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-blue-500/50'}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
@@ -63,7 +55,7 @@ export default function GlassSelect({ value, onChange, options, placeholder = "C
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`px-4 py-3 rounded-xl cursor-pointer text-sm font-semibold transition-all flex items-center justify-between ${itemHoverClass} ${String(value) === String(option.value) ? (isGlass ? 'bg-white/20 text-white' : 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400') : (isGlass ? 'text-white' : '')}`}
+                className={`px-4 py-3 rounded-xl cursor-pointer text-sm font-semibold transition-all flex items-center justify-between ${itemHoverClass} ${String(value) === String(option.value) ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : ''}`}
               >
                 {option.label}
                 {String(value) === String(option.value) && (
@@ -74,7 +66,7 @@ export default function GlassSelect({ value, onChange, options, placeholder = "C
               </li>
             ))}
             {options.length === 0 && (
-              <li className={`px-4 py-3 text-sm text-center italic ${isGlass ? 'text-white drop-shadow-md' : 'text-slate-500'}`}>
+              <li className={`px-4 py-3 text-sm text-center italic text-slate-500`}>
                 Không có dữ liệu
               </li>
             )}

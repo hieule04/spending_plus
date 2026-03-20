@@ -35,6 +35,7 @@ class User(Base):
     budgets = relationship("Budget", back_populates="user")
     notifications = relationship("Notification", back_populates="user")
     savings_goals = relationship("SavingsGoal", back_populates="user")
+    debts = relationship("Debt", back_populates="user")
 
 
 class Account(Base):
@@ -115,6 +116,7 @@ class Transaction(Base):
     account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
     savings_goal_id = Column(UUID(as_uuid=True), ForeignKey("savings_goals.id", ondelete="SET NULL"), nullable=True)
+    debt_id = Column(UUID(as_uuid=True), ForeignKey("debts.id", ondelete="SET NULL"), nullable=True)
 
     created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
     updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -124,6 +126,7 @@ class Transaction(Base):
     account = relationship("Account", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
     savings_goal = relationship("SavingsGoal", back_populates="transactions")
+    debt = relationship("Debt", back_populates="transactions")
 
 
 class Notification(Base):
@@ -157,3 +160,23 @@ class SavingsGoal(Base):
 
     user = relationship("User", back_populates="savings_goals")
     transactions = relationship("Transaction", back_populates="savings_goal")
+
+
+class Debt(Base):
+    """Bảng quản lý dư nợ."""
+    __tablename__ = "debts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    creditor_name = Column(String, nullable=False)
+    total_amount = Column(Numeric(15, 2), nullable=False)
+    remaining_amount = Column(Numeric(15, 2), nullable=False)
+    monthly_payment = Column(Numeric(15, 2), nullable=False)
+    due_date = Column(Integer, nullable=False)  # Ngày hạn hằng tháng (1-31)
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+    updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="debts")
+    transactions = relationship("Transaction", back_populates="debt")

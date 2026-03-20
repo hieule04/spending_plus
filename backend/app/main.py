@@ -20,7 +20,7 @@ from app.database import get_db, engine
 from app import models, schemas
 
 # Import tất cả các routers
-from app.api import auth, accounts, categories, transactions, users, budgets, stats, notifications, savings
+from app.api import auth, accounts, categories, transactions, users, budgets, stats, notifications, savings, debts
 
 # ==========================================
 # 1. KHỞI TẠO APP
@@ -58,6 +58,7 @@ app.include_router(stats.router, prefix="/api")
 app.include_router(budgets.router, prefix="/api/budgets", tags=["Budgets"])
 app.include_router(notifications.router, prefix="/api", tags=["Notifications"])
 app.include_router(savings.router, prefix="/api", tags=["Savings"])
+app.include_router(debts.router, prefix="/api", tags=["Debts"])
 
 
 # ==========================================

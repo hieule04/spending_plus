@@ -18,14 +18,6 @@ export default function DashboardTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<string>("month");
-  const [isGlass, setIsGlass] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsGlass(localStorage.getItem("app-theme") === "glass");
-    check();
-    window.addEventListener("theme_changed", check);
-    return () => window.removeEventListener("theme_changed", check);
-  }, []);
 
   const fetchStats = async (selectedPeriod: string) => {
     try { 
@@ -57,8 +49,8 @@ export default function DashboardTab() {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className={`p-4 rounded-xl shadow-xl ${isGlass ? 'glass-tooltip' : 'bg-slate-800 border border-slate-700'}`}>
-          <p className="text-white font-bold mb-2 pb-2 border-b border-slate-700">{label}</p>
+        <div className={`p-4 rounded-xl shadow-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
+          <p className="text-slate-900 dark:text-white font-bold mb-2 pb-2 border-b border-slate-200 dark:border-slate-700">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color || entry.fill }} className="text-sm font-medium flex items-center justify-between gap-4">
               <span>{entry.name}:</span>
@@ -75,10 +67,10 @@ export default function DashboardTab() {
     if (active && payload && payload.length) {
       const data = payload[0];
       return (
-        <div className={`p-3 rounded-xl shadow-xl flex items-center gap-3 ${isGlass ? 'glass-tooltip' : 'bg-slate-800 border border-slate-700'}`}>
+        <div className={`p-3 rounded-xl shadow-xl flex items-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.fill }}></div>
-          <span className="text-white font-medium">{data.name}:</span>
-          <span className="text-white font-bold">{formatCurrency(Number(data.value))}</span>
+          <span className="text-slate-600 dark:text-slate-300 font-medium">{data.name}:</span>
+          <span className="text-slate-900 dark:text-white font-bold">{formatCurrency(Number(data.value))}</span>
         </div>
       );
     }
@@ -86,11 +78,11 @@ export default function DashboardTab() {
   };
 
   // Shared styles
-  const cardClass = isGlass ? 'glass-card' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm';
-  const headingClass = isGlass ? 'text-white drop-shadow-md' : 'text-slate-900 dark:text-white font-bold';
-  const subTextClass = isGlass ? 'text-white drop-shadow-md' : 'text-slate-600 dark:text-slate-400 font-bold';
-  const gridColor = isGlass ? 'rgba(255,255,255,0.06)' : '#cbd5e1'; 
-  const axisColor = isGlass ? 'rgba(255,255,255,0.4)' : '#475569'; 
+  const cardClass = 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-3xl';
+  const headingClass = 'text-slate-900 dark:text-white font-bold';
+  const subTextClass = 'text-slate-500 dark:text-slate-400 font-bold';
+  const gridColor = '#cbd5e1'; 
+  const axisColor = '#475569'; 
 
   return (
     <div className="space-y-6 animate-fade-in mb-6">
@@ -98,9 +90,7 @@ export default function DashboardTab() {
       {/* Time Filter Bar */}
       <div className={`flex flex-wrap items-center justify-between gap-4 p-2 sm:p-2.5 rounded-2xl shadow-sm ${cardClass}`}>
         <h2 className={`font-bold px-3 hidden sm:block ${headingClass}`}>{t('db.title')}</h2>
-        <div className={`flex p-1 rounded-xl w-full sm:w-auto overflow-x-auto hide-scrollbar ${
-          isGlass ? 'bg-white/10' : 'bg-slate-100 dark:bg-slate-900/50'
-        }`}>
+        <div className={`flex p-1 rounded-xl w-full sm:w-auto overflow-x-auto hide-scrollbar bg-slate-100 dark:bg-slate-900/50`}>
           {[
             { id: 'all', label: t('db.period.all') },
             { id: 'day', label: t('db.period.day') },
@@ -112,11 +102,9 @@ export default function DashboardTab() {
               key={p.id}
               onClick={() => setPeriod(p.id)}
               className={`px-4 py-2 text-sm font-semibold rounded-lg whitespace-nowrap transition-all ${
-                isGlass
-                  ? (period === p.id ? 'bg-white/10 text-white shadow-sm' : 'text-white hover:text-white')
-                  : (period === p.id 
-                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' 
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200')
+                period === p.id 
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
               {p.label}
@@ -135,30 +123,18 @@ export default function DashboardTab() {
         <>
           {/* 3 KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group ${
-              isGlass ? 'glass-card' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-blue-500/30 shadow-blue-500/5'
-            }`}>
-              <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all ${
-                isGlass ? 'bg-blue-500/10 group-hover:bg-blue-500/20' : 'bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20'
-              }`}></div>
+            <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-blue-500/30 shadow-blue-500/5`}>
+              <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20`}></div>
               <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.balance')}</h3>
               <p className={`text-3xl font-extrabold ${headingClass}`}>{formatCurrency(stats.balance)}</p>
             </div>
-            <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group ${
-              isGlass ? 'glass-card' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-emerald-500/30 shadow-emerald-500/5'
-            }`}>
-              <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all ${
-                isGlass ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20'
-              }`}></div>
+            <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-emerald-500/30 shadow-emerald-500/5`}>
+              <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20`}></div>
               <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.income')}</h3>
               <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">+{formatCurrency(stats.total_income)}</p>
             </div>
-            <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group ${
-              isGlass ? 'glass-card' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-rose-500/30 shadow-rose-500/5'
-            }`}>
-              <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all ${
-                isGlass ? 'bg-rose-500/10 group-hover:bg-rose-500/20' : 'bg-rose-50 dark:bg-rose-500/10 group-hover:bg-rose-100 dark:group-hover:bg-rose-500/20'
-              }`}></div>
+            <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-rose-500/30 shadow-rose-500/5`}>
+              <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all bg-rose-50 dark:bg-rose-500/10 group-hover:bg-rose-100 dark:group-hover:bg-rose-500/20`}></div>
               <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.expense')}</h3>
               <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">-{formatCurrency(stats.total_expense)}</p>
             </div>
@@ -175,7 +151,7 @@ export default function DashboardTab() {
                         {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
                       </Pie>
                       <PieTooltip content={<CustomPieTooltip />} />
-                      <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ paddingLeft: '10px', color: isGlass ? 'rgba(255,255,255,0.7)' : undefined }} />
+                      <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ paddingLeft: '10px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -194,8 +170,8 @@ export default function DashboardTab() {
                     <BarChart data={stats.column_data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
                       <XAxis dataKey="name" stroke={axisColor} tick={{fill: axisColor, fontWeight: 600}} axisLine={false} tickLine={false} />
-                      <BarTooltip content={<CustomTooltip />} cursor={{fill: isGlass ? 'rgba(255,255,255,0.03)' : 'rgba(51, 65, 85, 0.1)'}} />
-                      <Legend wrapperStyle={{ paddingTop: '20px', color: isGlass ? 'rgba(255,255,255,0.7)' : undefined }} />
+                      <BarTooltip content={<CustomTooltip />} cursor={{fill: 'rgba(51, 65, 85, 0.1)'}} />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
                       <Bar dataKey="income" name={t('db.chart.income')} fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={80} />
                       <Bar dataKey="expense" name={t('db.chart.expense')} fill="#f43f5e" radius={[6, 6, 0, 0]} maxBarSize={80} />
                     </BarChart>
@@ -223,7 +199,7 @@ export default function DashboardTab() {
                     <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 12}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
                     <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 12}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} />
                     <BarTooltip content={<CustomTooltip />} />
-                    <Legend wrapperStyle={{ paddingTop: '20px', color: isGlass ? 'rgba(255,255,255,0.7)' : undefined }} />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                     <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
                     <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
                   </AreaChart>

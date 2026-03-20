@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { registerUser } from "../service/api";
-import { useGlassTheme } from "../hooks/useGlassTheme";
 
 export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [loading, setLoading] = useState(false);
-  const isGlass = useGlassTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,43 +25,46 @@ export default function RegisterForm() {
     }
   };
 
-  const cardClass = isGlass ? 'glass-card' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl';
-  const headingClass = isGlass ? 'text-white drop-shadow-md' : 'text-slate-900 dark:text-white';
-  const labelClass = isGlass ? 'text-white' : 'text-slate-700 dark:text-slate-300';
-  const inputClass = isGlass ? 'glass-input' : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-indigo-500';
+  const cardClass = 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl';
+  const headingClass = 'text-slate-900 dark:text-white';
+  const labelClass = 'text-slate-500 dark:text-slate-400 font-bold';
+  const inputClass = 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all';
 
   return (
-    <div className={`max-w-md w-full mx-auto p-8 rounded-3xl transition-all duration-300 ${cardClass}`}>
-      <h2 className={`text-3xl font-black text-center mb-8 ${headingClass}`}>Tạo Tài Khoản</h2>
+    <div className={`max-w-md w-full mx-auto p-10 rounded-3xl transition-all duration-300 ${cardClass}`}>
+      <h2 className={`text-3xl font-black text-center mb-10 ${headingClass}`}>Tạo Tài Khoản</h2>
       
       {message && (
-        <div className={`p-4 mb-6 rounded-xl text-sm font-bold border ${
+        <div className={`p-4 mb-8 rounded-2xl text-sm font-bold border transition-all animate-fade-in ${
           message.type === "success" 
             ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" 
-            : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20"
+            : "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20"
         }`}>
-          {message.text}
+          <div className="flex items-center gap-3">
+            <span>{message.type === 'success' ? '🎉' : '⚠️'}</span>
+            {message.text}
+          </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-8">
         <div>
-          <label className={`block text-sm font-bold mb-2 ${labelClass}`}>Email</label>
+          <label className={`block text-xs uppercase tracking-widest mb-2 ${labelClass}`}>Email</label>
           <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            className={`w-full px-5 py-3 border rounded-2xl outline-none transition-all ${inputClass}`}
+            className={`w-full px-5 py-4 border rounded-2xl outline-none ${inputClass}`}
             placeholder="you@example.com" />
         </div>
         
         <div>
-          <label className={`block text-sm font-bold mb-2 ${labelClass}`}>Mật khẩu</label>
+          <label className={`block text-xs uppercase tracking-widest mb-2 ${labelClass}`}>Mật khẩu</label>
           <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-            className={`w-full px-5 py-3 border rounded-2xl outline-none transition-all ${inputClass}`}
+            className={`w-full px-5 py-4 border rounded-2xl outline-none ${inputClass}`}
             placeholder="••••••••" />
         </div>
 
         <button type="submit" disabled={loading}
-          className={`w-full py-4 px-6 rounded-2xl text-white font-black text-lg shadow-lg transition-all active:scale-[0.98] ${
-            loading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/25"
+          className={`w-full py-4.5 px-6 rounded-2xl text-white font-black text-lg shadow-xl transition-all active:scale-[0.98] ${
+            loading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30"
           }`}>
           {loading ? "Đang xử lý..." : "Đăng Ký"}
         </button>

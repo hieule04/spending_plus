@@ -125,6 +125,7 @@ class TransactionBase(BaseModel):
     account_id: UUID
     category_id: Optional[UUID] = None
     savings_goal_id: Optional[UUID] = None
+    debt_id: Optional[UUID] = None
 
 
 class TransactionCreate(TransactionBase):
@@ -139,6 +140,7 @@ class TransactionUpdate(BaseModel):
     account_id: Optional[UUID] = None
     category_id: Optional[UUID] = None
     savings_goal_id: Optional[UUID] = None
+    debt_id: Optional[UUID] = None
 
 
 class TransactionResponse(TransactionBase):
@@ -242,6 +244,40 @@ class SavingsGoalResponse(SavingsGoalBase):
     updated_at: datetime
     model_config = model_config
 
+
+# ==========================================
+# 9. Debt Schemas
+# ==========================================
+
+class DebtBase(BaseModel):
+    creditor_name: str
+    total_amount: Decimal
+    remaining_amount: Decimal
+    monthly_payment: Decimal
+    due_date: int = Field(..., ge=1, le=31, description="Ngày hạn hằng tháng (1-31)")
+
+
+class DebtCreate(BaseModel):
+    creditor_name: str
+    total_amount: Decimal
+    monthly_payment: Decimal
+    due_date: int = Field(..., ge=1, le=31)
+
+
+class DebtUpdate(BaseModel):
+    creditor_name: Optional[str] = None
+    total_amount: Optional[Decimal] = None
+    remaining_amount: Optional[Decimal] = None
+    monthly_payment: Optional[Decimal] = None
+    due_date: Optional[int] = Field(None, ge=1, le=31)
+
+
+class DebtResponse(DebtBase):
+    id: UUID
+    user_id: UUID
+    created_at: datetime
+    updated_at: datetime
+    model_config = model_config
 
 # ==========================================
 # 8. Common/System/Stats Schemas
