@@ -312,7 +312,14 @@ export const getSavings = async () => {
   }
 };
 
-export const createSaving = async (data: any) => {
+interface SavingsGoalPayload {
+  name: string;
+  target_amount: number;
+  current_amount?: number;
+  deadline?: string;
+}
+
+export const createSaving = async (data: SavingsGoalPayload) => {
   try {
     const response = await api.post("/api/savings", data);
     return response.data;
@@ -321,7 +328,7 @@ export const createSaving = async (data: any) => {
   }
 };
 
-export const updateSaving = async (id: string, data: any) => {
+export const updateSaving = async (id: string, data: Partial<SavingsGoalPayload>) => {
   try {
     const response = await api.put(`/api/savings/${id}`, data);
     return response.data;

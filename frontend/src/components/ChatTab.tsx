@@ -46,8 +46,7 @@ export default function ChatTab() {
             },
           ]);
         }
-      } catch (e) {
-        console.error("Failed to load chat history", e);
+      } catch {
       } finally {
         setIsInitialLoading(false);
       }

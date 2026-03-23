@@ -261,7 +261,7 @@ export default function TopBar({ onLogout, direction = 'up' }: TopBarProps) {
                   ].map(({ id: lang, labelKey }) => (
                     <button 
                       key={lang}
-                      onClick={() => { setLanguage(lang as any); setDropdownOpen(false); }} 
+                      onClick={() => { setLanguage(lang); setDropdownOpen(false); }} 
                       className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold flex items-center justify-between gap-3 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200`}
                     >
                       <div className="flex items-center gap-3">

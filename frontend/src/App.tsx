@@ -141,7 +141,7 @@ function App() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`p-2 rounded-xl transition-all ${
                   activeTab === tab.id
                     ? 'bg-blue-100 dark:bg-blue-600 text-blue-700 dark:text-white'
