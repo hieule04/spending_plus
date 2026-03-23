@@ -1,21 +1,28 @@
+"""
+app/crud/debts.py
+Logic truy vấn database cho bảng Debts (Khoản nợ).
+"""
+
 from uuid import UUID
+
 from sqlalchemy.orm import Session
+
 from app import models, schemas
 
 
-def list_debts(db: Session, user_id: UUID):
+def list_debts(db: Session, user_id: UUID) -> list[models.Debt]:
     """Lấy danh sách khoản nợ của user."""
     return db.query(models.Debt).filter(
-        models.Debt.user_id == user_id
+        models.Debt.user_id == user_id,
     ).order_by(models.Debt.created_at.desc()).all()
 
 
-def create_debt(db: Session, user_id: UUID, data: schemas.DebtCreate):
+def create_debt(db: Session, user_id: UUID, data: schemas.DebtCreate) -> models.Debt:
     """Tạo khoản nợ mới. remaining_amount = total_amount ban đầu."""
     new_debt = models.Debt(
         creditor_name=data.creditor_name,
         total_amount=data.total_amount,
-        remaining_amount=data.total_amount,  # Ban đầu nợ còn lại = tổng nợ
+        remaining_amount=data.total_amount,
         monthly_payment=data.monthly_payment,
         due_date=data.due_date,
         user_id=user_id,
@@ -26,11 +33,11 @@ def create_debt(db: Session, user_id: UUID, data: schemas.DebtCreate):
     return new_debt
 
 
-def update_debt(db: Session, debt_id: UUID, user_id: UUID, data: schemas.DebtUpdate):
+def update_debt(db: Session, debt_id: UUID, user_id: UUID, data: schemas.DebtUpdate) -> models.Debt | None:
     """Cập nhật thông tin khoản nợ."""
     debt = db.query(models.Debt).filter(
         models.Debt.id == debt_id,
-        models.Debt.user_id == user_id
+        models.Debt.user_id == user_id,
     ).first()
     if not debt:
         return None
@@ -44,16 +51,16 @@ def update_debt(db: Session, debt_id: UUID, user_id: UUID, data: schemas.DebtUpd
     return debt
 
 
-def delete_debt(db: Session, debt_id: UUID, user_id: UUID):
+def delete_debt(db: Session, debt_id: UUID, user_id: UUID) -> bool:
     """Xóa khoản nợ và gỡ liên kết các giao dịch."""
     debt = db.query(models.Debt).filter(
         models.Debt.id == debt_id,
-        models.Debt.user_id == user_id
+        models.Debt.user_id == user_id,
     ).first()
     if debt:
         # Gỡ link ở các giao dịch trước khi xóa
         db.query(models.Transaction).filter(
-            models.Transaction.debt_id == debt_id
+            models.Transaction.debt_id == debt_id,
         ).update({models.Transaction.debt_id: None})
 
         db.delete(debt)

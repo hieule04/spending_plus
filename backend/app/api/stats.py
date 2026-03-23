@@ -1,3 +1,8 @@
+"""
+app/api/stats.py
+Router cho thống kê Dashboard (tổng thu, tổng chi, biểu đồ).
+"""
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case, cast, Date
@@ -9,7 +14,7 @@ from app import models, schemas
 
 router = APIRouter(prefix="/stats", tags=["Stats"])
 
-def get_start_date(period: str):
+def get_start_date(period: str) -> datetime | None:
     now = datetime.now()
     if period == "day":
         return now.replace(hour=0, minute=0, second=0, microsecond=0)

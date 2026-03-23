@@ -1,7 +1,11 @@
+"""
+app/api/debts.py
+Router CRUD cho bảng Debts (Khoản nợ).
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import List
 
 from app import models, schemas, deps
 from app.database import get_db
@@ -10,11 +14,11 @@ from app.crud import debts as crud_debts
 router = APIRouter()
 
 
-@router.get("/debts", response_model=List[schemas.DebtResponse])
+@router.get("/debts", response_model=list[schemas.DebtResponse])
 def get_debts(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(deps.get_current_user)
-):
+    current_user: models.User = Depends(deps.get_current_user),
+) -> list[schemas.DebtResponse]:
     """Lấy danh sách khoản nợ."""
     return crud_debts.list_debts(db, current_user.id)
 
@@ -23,8 +27,8 @@ def get_debts(
 def create_debt(
     data: schemas.DebtCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(deps.get_current_user)
-):
+    current_user: models.User = Depends(deps.get_current_user),
+) -> schemas.DebtResponse:
     """Tạo khoản nợ mới."""
     return crud_debts.create_debt(db, current_user.id, data)
 
@@ -34,8 +38,8 @@ def update_debt(
     debt_id: UUID,
     data: schemas.DebtUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(deps.get_current_user)
-):
+    current_user: models.User = Depends(deps.get_current_user),
+) -> schemas.DebtResponse:
     """Cập nhật khoản nợ."""
     debt = crud_debts.update_debt(db, debt_id, current_user.id, data)
     if not debt:
@@ -47,8 +51,8 @@ def update_debt(
 def delete_debt(
     debt_id: UUID,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(deps.get_current_user)
-):
+    current_user: models.User = Depends(deps.get_current_user),
+) -> schemas.MessageResponse:
     """Xóa khoản nợ."""
     try:
         success = crud_debts.delete_debt(db, debt_id, current_user.id)
