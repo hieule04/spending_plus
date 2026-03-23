@@ -12,6 +12,7 @@ export const translations = {
     'nav.profile': 'Hồ sơ',
     'nav.system': 'Hệ thống',
     'nav.debts': 'Khoản nợ',
+    'nav.chat': 'Trợ lý AI',
     'nav.theme': 'Nền',
     'nav.theme.light': 'Sáng',
     'nav.theme.dark': 'Tối',
@@ -237,6 +238,16 @@ export const translations = {
     'debt.pay_amount_label': 'Số tiền thanh toán (VNĐ)',
     'debt.delete_confirm_title': 'Xác nhận xóa khoản nợ',
     'debt.delete_confirm_msg': 'Bạn có chắc chắn muốn xóa khoản nợ này? Các giao dịch liên quan sẽ được giữ lại nhưng không còn liên kết.',
+
+    // Chat AI
+    'chat.title': 'Trợ lý AI',
+    'chat.subtitle': 'Hỏi đáp về tài chính cá nhân',
+    'chat.placeholder': 'Nhập câu hỏi về tài chính...',
+    'chat.send': 'Gửi',
+    'chat.thinking': 'Đang suy nghĩ...',
+    'chat.welcome': 'Xin chào! Tôi là trợ lý tài chính của Spending Plus. Hãy hỏi tôi bất cứ điều gì về quản lý chi tiêu, tiết kiệm hay ngân sách nhé! 💰',
+    'chat.error': 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại.',
+    'chat.empty_input': 'Vui lòng nhập câu hỏi',
   },
   en: {
     // Navigation
@@ -251,6 +262,7 @@ export const translations = {
     'nav.profile': 'Profile',
     'nav.system': 'System',
     'nav.debts': 'Debts',
+    'nav.chat': 'AI Assistant',
     'nav.theme': 'Theme',
     'nav.theme.light': 'Light',
     'nav.theme.dark': 'Dark',
@@ -474,6 +486,16 @@ export const translations = {
     'debt.pay_amount_label': 'Payment amount',
     'debt.delete_confirm_title': 'Confirm Delete Debt',
     'debt.delete_confirm_msg': 'Are you sure you want to delete this debt? Related transactions will be kept but unlinked.',
+
+    // Chat AI
+    'chat.title': 'AI Assistant',
+    'chat.subtitle': 'Ask about personal finance',
+    'chat.placeholder': 'Ask a question about finance...',
+    'chat.send': 'Send',
+    'chat.thinking': 'Thinking...',
+    'chat.welcome': 'Hello! I\'m the Spending Plus financial assistant. Ask me anything about budgeting, saving, or managing your finances! 💰',
+    'chat.error': 'Sorry, an error occurred. Please try again.',
+    'chat.empty_input': 'Please enter a question',
   }
 };
 

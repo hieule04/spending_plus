@@ -8,11 +8,12 @@ import DashboardTab from "./components/DashboardTab"
 import BudgetsTab from "./components/BudgetsTab"
 import SavingsTab from "./components/SavingsTab"
 import DebtsTab from "./components/DebtsTab"
+import ChatTab from "./components/ChatTab"
 import TopBar from "./components/TopBar"
 import "./App.css"
 import { useLanguage } from "./context/LanguageContext"
 
-type TabType = 'system' | 'transactions' | 'savings' | 'accounts' | 'categories' | 'budgets' | 'debts';
+type TabType = 'system' | 'transactions' | 'savings' | 'accounts' | 'categories' | 'budgets' | 'debts' | 'chat';
 
 function App() {
   const { t, language } = useLanguage();
@@ -51,6 +52,7 @@ function App() {
     { id: 'accounts',     label: t('nav.accounts') },
     { id: 'categories',   label: t('nav.categories') },
     { id: 'debts',         label: t('nav.debts') },
+    { id: 'chat',          label: t('nav.chat') },
   ];
 
   if (!isLoggedIn) {
@@ -198,6 +200,7 @@ function App() {
             {activeTab === 'accounts' && <AccountsTab />}
             {activeTab === 'categories' && <CategoriesTab />}
             {activeTab === 'debts' && <DebtsTab />}
+            {activeTab === 'chat' && <ChatTab />}
           </div>
         </div>
       </main>

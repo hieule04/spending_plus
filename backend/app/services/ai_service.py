@@ -19,7 +19,7 @@ SYSTEM_INSTRUCTION = (
 class AIService:
     """
     Wrapper async cho Google Genai SDK.
-    Sử dụng model gemini-1.5-flash với system instruction.
+    Sử dụng model gemini-flash-latest với system instruction.
     """
 
     def __init__(self):
@@ -35,7 +35,7 @@ class AIService:
         """
         try:
             response = await self.client.aio.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-flash-latest",
                 contents=user_message,
                 config=genai.types.GenerateContentConfig(
                     system_instruction=SYSTEM_INSTRUCTION,

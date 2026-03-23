@@ -398,3 +398,17 @@ export const deleteDebt = async (id: string) => {
     handleApiError(error, "Xóa khoản nợ thất bại.");
   }
 };
+
+// ==========================================
+// 11. Chat AI
+// ==========================================
+
+export const sendChatMessage = async (message: string): Promise<{ reply: string }> => {
+  try {
+    const response = await api.post("/api/chat", { message });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Không thể gửi tin nhắn đến trợ lý AI.");
+  }
+  return { reply: "" };
+};
