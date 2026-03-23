@@ -9,10 +9,15 @@ Chỉ thực hiện 3 việc:
 Toàn bộ logic nghiệp vụ nằm trong thư mục app/.
 """
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, FileResponse
+import sys
+import os
+from pathlib import Path
 
 # Import config & database
 from app.core.config import settings
@@ -36,13 +41,54 @@ app = FastAPI(title="Spending Plus API")
 # ==========================================
 
 # CORS cho React (Vite) và Tauri
+# Cho phép tất cả origins khi đóng gói EXE để tránh lỗi CORS phức tạp
+_origins = ["*"] if getattr(sys, 'frozen', False) else settings.CORS_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Thêm logging để debug lỗi API trong file EXE
+@app.middleware("http")
+async def log_requests(request, call_next):
+    import time
+    import json
+    start_time = time.time()
+    
+    # Clone request body for logging if it's a 400 error
+    body = b""
+    if request.method in ["POST", "PUT", "PATCH"]:
+         body = await request.body()
+         # Re-set body for the actual handler
+         async def receive():
+             return {"type": "http.request", "body": body}
+         request._receive = receive
+
+    response = await call_next(request)
+    duration = time.time() - start_time
+
+    if request.url.path.startswith("/api"):
+        print(f"[*] API {request.method} {request.url.path} - Status: {response.status_code} - Duration: {duration:.2f}s")
+        if response.status_code == 400:
+            print(f"[!] 400 Bad Request Detail:")
+            print(f"    - Headers: {dict(request.headers)}")
+            if body:
+                try:
+                    print(f"    - Body: {body.decode('utf-8')}")
+                except:
+                    print(f"    - Body: {str(body)}")
+    return response
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import traceback
+    print(f"[ERROR] Global Exception: {str(exc)}")
+    traceback.print_exc()
+    return HTMLResponse(content=f"Internal Server Error: {str(exc)}", status_code=500)
 
 
 # ==========================================
@@ -66,7 +112,7 @@ app.include_router(chat.router, prefix="/api", tags=["Chat AI"])
 # 4. SYSTEM ENDPOINTS
 # ==========================================
 
-@app.get("/", tags=["System"], response_model=schemas.SystemHealthResponse)
+@app.get("/api/health", tags=["System"], response_model=schemas.SystemHealthResponse)
 def read_root():
     """Health check — kiểm tra backend có đang chạy không."""
     return {"message": "Spending Plus Backend is running!"}
@@ -84,3 +130,76 @@ def test_database_connection(db: Session = Depends(get_db)):
         }
     except Exception as e:
         return {"status": "error", "message": f"Lỗi kết nối: {str(e)}"}
+
+
+# ==========================================
+# 5. HOST FRONTEND (Static Files)
+# ==========================================
+
+# Lấy đường dẫn động tới thư mục dist
+if getattr(sys, 'frozen', False):
+    # Dùng _MEIPASS do PyInstaller giải nén ra thư mục tạm
+    _base_dir = Path(sys._MEIPASS)
+else:
+    # Môi trường dev: thư mục frontend nằm cùng cấp thư mục backend
+    _base_dir = Path(__file__).resolve().parent.parent.parent.parent / "frontend"
+
+dist_path = _base_dir / "dist"
+
+if dist_path.exists():
+    # Mount các file assets tĩnh
+    assets_dir = dist_path / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+    
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend(full_path: str = ""):
+        # Tránh can thiệp vào Request của API
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API route not found")
+        
+        # Nếu truy cập root "/"
+        if not full_path or full_path == "":
+             index_path = dist_path / "index.html"
+             if index_path.exists():
+                 return FileResponse(index_path)
+
+        # Nếu có file tĩnh ở root (ví dụ logo.png, favicon)
+        file_path = dist_path / full_path
+        if full_path and file_path.is_file():
+            return FileResponse(file_path)
+            
+        # Fallback về index.html cho SPA (React)
+        index_path = dist_path / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+        else:
+            return HTMLResponse("<h1>Frontend built index.html not found!</h1>", status_code=404)
+else:
+    print(f"Warning: Frontend dist path not found at {dist_path}")
+
+# ==========================================
+# 6. RUN SERVER (Cho PyInstaller)
+# ==========================================
+if __name__ == "__main__":
+    import uvicorn
+    import webbrowser
+    import threading
+    import time
+
+    # Mặc định chạy ở port 8000, host 127.0.0.1
+    port = int(settings.PORT) if hasattr(settings, 'PORT') and settings.PORT else 8000
+    host = settings.HOST if hasattr(settings, 'HOST') and settings.HOST else "127.0.0.1"
+    url = f"http://{host}:{port}"
+
+    def open_browser():
+        # Chờ 1.5s để server kịp khởi động
+        time.sleep(1.5)
+        print(f"Opening browser at {url}...")
+        webbrowser.open(url)
+
+    # Chạy thread mở trình duyệt song song với server
+    threading.Thread(target=open_browser, daemon=True).start()
+
+    print(f"Starting Spending Plus server at {url}...")
+    uvicorn.run(app, host=host, port=port)

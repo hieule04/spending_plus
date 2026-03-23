@@ -4,13 +4,27 @@ Quản lý cấu hình toàn bộ ứng dụng bằng biến môi trường (Env
 """
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Tải file .env từ thư mục gốc backend/
-_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
-load_dotenv(_env_path)
+if getattr(sys, 'frozen', False):
+    # Chạy dưới dạng exe (PyInstaller)
+    # Lấy đường dẫn tuyệt đối của file .exe
+    _base_dir = Path(sys.executable).resolve().parent
+    _env_path = _base_dir / ".env"
+    print(f"[*] RUNNING AS EXE. Base Dir: {_base_dir}")
+    print(f"[*] Looking for .env at: {_env_path}")
+else:
+    # Chạy dưới dạng dev (FastAPI chuẩn)
+    _env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    print(f"[*] RUNNING AS DEV. Looking for .env at: {_env_path}")
 
+if _env_path.exists():
+    load_dotenv(_env_path, override=True) # Đảm bảo ghi đè nếu có biến môi trường cũ
+    print(f"[+] .env loaded successfully from {_env_path}")
+else:
+    print(f"[!] Warning: .env file NOT FOUND at {_env_path}")
 
 def _parse_origins(raw: str) -> list[str]:
     """Phân tích chuỗi CORS_ORIGINS thành list. Nếu rỗng, dùng giá trị mặc định."""
@@ -57,7 +71,14 @@ class Settings:
 
     # --- App ---
     APP_TITLE: str = "Spending Plus API"
+    PORT: int = int(os.getenv("PORT", "8000"))
+    HOST: str = os.getenv("HOST", "127.0.0.1")
 
 
 # Singleton — import settings từ bất kỳ đâu trong project
 settings = Settings()
+
+# In log kiểm tra Database (Ẩn mật khẩu)
+if settings.DATABASE_URL:
+    db_display = settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else "..."
+    print(f"[*] Database Host Target: ...@{db_display}")
