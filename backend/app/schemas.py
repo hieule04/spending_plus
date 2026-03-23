@@ -343,4 +343,13 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str = Field(..., description="Phản hồi từ AI")
+    transaction_created: bool = Field(False, description="True nếu AI đã tự động tạo giao dịch")
+
+
+class ChatHistoryResponse(BaseModel):
+    id: UUID
+    role: str
+    content: str
+    created_at: datetime
+    model_config = model_config
 

@@ -36,6 +36,7 @@ class User(Base):
     notifications = relationship("Notification", back_populates="user")
     savings_goals = relationship("SavingsGoal", back_populates="user")
     debts = relationship("Debt", back_populates="user")
+    chat_messages = relationship("ChatHistory", back_populates="user")
 
 
 class Account(Base):
@@ -180,3 +181,16 @@ class Debt(Base):
 
     user = relationship("User", back_populates="debts")
     transactions = relationship("Transaction", back_populates="debt")
+
+
+class ChatHistory(Base):
+    """Bảng lưu trữ lịch sử chat AI."""
+    __tablename__ = "chat_history"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    role = Column(String, nullable=False)  # 'user' hoặc 'ai'
+    content = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+
+    user = relationship("User", back_populates="chat_messages")

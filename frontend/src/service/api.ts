@@ -403,12 +403,22 @@ export const deleteDebt = async (id: string) => {
 // 11. Chat AI
 // ==========================================
 
-export const sendChatMessage = async (message: string): Promise<{ reply: string }> => {
+export const sendChatMessage = async (message: string): Promise<{ reply: string; transaction_created: boolean }> => {
   try {
     const response = await api.post("/api/chat", { message });
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể gửi tin nhắn đến trợ lý AI.");
   }
-  return { reply: "" };
+  return { reply: "", transaction_created: false };
+};
+
+export const getChatHistory = async (): Promise<{ id: string, role: string, content: string, created_at: string }[]> => {
+  try {
+    const response = await api.get("/api/chat/history");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Không thể tải lịch sử chat.");
+  }
+  return [];
 };
