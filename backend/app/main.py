@@ -142,7 +142,7 @@ if getattr(sys, 'frozen', False):
     _base_dir = Path(sys._MEIPASS)
 else:
     # Môi trường dev: thư mục frontend nằm cùng cấp thư mục backend
-    _base_dir = Path(__file__).resolve().parent.parent.parent.parent / "frontend"
+    _base_dir = Path(__file__).resolve().parent.parent.parent / "frontend"
 
 dist_path = _base_dir / "dist"
 
