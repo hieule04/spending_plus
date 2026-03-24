@@ -6,7 +6,9 @@ Giai đoạn 3: Hỗ trợ tự động nhập giao dịch qua ngôn ngữ tự 
 """
 
 import json
+import os
 import re
+import ssl
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -169,6 +171,44 @@ def _parse_ai_response(raw_text: str) -> dict:
     }
 
 
+
+
+def _build_ssl_verify():
+    """
+    Tạo cấu hình verify cho HTTP client của google-genai.
+    Ưu tiên: biến môi trường SSL -> truststore (Windows cert store) -> certifi.
+    """
+    env_ca = os.getenv("SSL_CERT_FILE") or os.getenv("REQUESTS_CA_BUNDLE")
+    if env_ca:
+        print(f"[*] Gemini SSL verify via env CA bundle: {env_ca}")
+        return env_ca
+
+    try:
+        import truststore
+
+        ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        print("[*] Gemini SSL verify via truststore SSLContext")
+        return ctx
+    except Exception as e:
+        print(f"[!] truststore SSLContext unavailable for Gemini client: {e}")
+
+    try:
+        import certifi
+
+        cert_path = certifi.where()
+        print(f"[*] Gemini SSL verify via certifi: {cert_path}")
+        return cert_path
+    except Exception as e:
+        print(f"[!] certifi unavailable for Gemini client: {e}")
+
+    print("[!] Gemini SSL verify fallback: default True")
+    return True
+
+def _build_http_options(verify_value):
+    return genai.types.HttpOptions(
+        client_args={"verify": verify_value},
+        async_client_args={"verify": verify_value},
+    )
 # ============================================================
 # AIService Class
 # ============================================================
@@ -183,18 +223,42 @@ class AIService:
         if not settings.GOOGLE_API_KEY:
             raise ValueError("GOOGLE_API_KEY chưa được cấu hình trong .env")
 
-        self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+        self._ssl_verify = _build_ssl_verify()
+        self.client = genai.Client(
+            api_key=settings.GOOGLE_API_KEY,
+            http_options=_build_http_options(self._ssl_verify),
+        )
 
     async def _call_gemini(self, user_message: str, system_instruction: str) -> str:
         """Gọi Gemini API và trả về raw text."""
-        response = await self.client.aio.models.generate_content(
-            model="gemini-flash-latest",
-            contents=user_message,
-            config=genai.types.GenerateContentConfig(
-                system_instruction=system_instruction,
-            ),
-        )
-        return response.text
+        try:
+            response = await self.client.aio.models.generate_content(
+                model="gemini-flash-latest",
+                contents=user_message,
+                config=genai.types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                ),
+            )
+            return response.text
+        except Exception as e:
+            if "CERTIFICATE_VERIFY_FAILED" not in str(e) or self._ssl_verify is False:
+                raise
+
+            print("[!] Gemini SSL verify failed; retrying once with verify=False (insecure).")
+            self._ssl_verify = False
+            self.client = genai.Client(
+                api_key=settings.GOOGLE_API_KEY,
+                http_options=_build_http_options(False),
+            )
+
+            response = await self.client.aio.models.generate_content(
+                model="gemini-flash-latest",
+                contents=user_message,
+                config=genai.types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                ),
+            )
+            return response.text
 
     async def process_chat(
         self,

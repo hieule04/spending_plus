@@ -8,6 +8,34 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
+def _configure_ssl_trust() -> None:
+    """
+    Ưu tiên dùng trust store của hệ điều hành để tránh lỗi SSL trong bản EXE.
+    Fallback: dùng certifi bundle nếu truststore chưa sẵn sàng.
+    """
+    try:
+        import truststore
+
+        truststore.inject_into_ssl()
+        print("[+] SSL trust configured via truststore (system certificates).")
+        return
+    except Exception as e:
+        print(f"[!] truststore unavailable: {e}")
+
+    try:
+        import certifi
+
+        cert_path = certifi.where()
+        if cert_path:
+            os.environ.setdefault("SSL_CERT_FILE", cert_path)
+            os.environ.setdefault("REQUESTS_CA_BUNDLE", cert_path)
+            print(f"[*] SSL fallback using certifi bundle: {cert_path}")
+    except Exception as e:
+        print(f"[!] certifi fallback unavailable: {e}")
+
+
+_configure_ssl_trust()
+
 if getattr(sys, 'frozen', False):
     # Chạy dưới dạng exe (PyInstaller)
     # Lấy đường dẫn tuyệt đối của file .exe
@@ -82,3 +110,4 @@ settings = Settings()
 if settings.DATABASE_URL:
     db_display = settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else "..."
     print(f"[*] Database Host Target: ...@{db_display}")
+
