@@ -59,6 +59,9 @@ async def chat_with_ai(
             transaction_created=transaction_created,
         )
     except RuntimeError as e:
+        import traceback
+        print(f"[ERROR] AI Chat RuntimeError: {str(e)}")
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(e),

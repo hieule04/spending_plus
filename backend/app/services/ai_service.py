@@ -230,35 +230,37 @@ class AIService:
         )
 
     async def _call_gemini(self, user_message: str, system_instruction: str) -> str:
-        """Gọi Gemini API và trả về raw text."""
+        """
+        Gọi Gemini API bằng phương thức Synchronous để tránh lỗi DNS của aiohttp trên Windows/Anaconda.
+        Sử dụng asyncio.to_thread để chạy không gây block event loop.
+        """
+        import asyncio
+        import time
+        start_time = time.time()
+        
         try:
-            response = await self.client.aio.models.generate_content(
-                model="gemini-flash-latest",
-                contents=user_message,
-                config=genai.types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                ),
-            )
+            print(f"[*] Calling Gemini... (Model: gemini-flash-latest)")
+            
+            # Sử dụng đồng bộ (Sync) nhưng bọc trong Thread để không treo UI
+            def _sync_call():
+                return self.client.models.generate_content(
+                    model="gemini-flash-latest",
+                    contents=user_message,
+                    config=genai.types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                    ),
+                )
+            
+            response = await asyncio.to_thread(_sync_call)
+            
+            duration = time.time() - start_time
+            print(f"[+] Gemini responded in {duration:.2f}s")
             return response.text
+            
         except Exception as e:
-            if "CERTIFICATE_VERIFY_FAILED" not in str(e) or self._ssl_verify is False:
-                raise
-
-            print("[!] Gemini SSL verify failed; retrying once with verify=False (insecure).")
-            self._ssl_verify = False
-            self.client = genai.Client(
-                api_key=settings.GOOGLE_API_KEY,
-                http_options=_build_http_options(False),
-            )
-
-            response = await self.client.aio.models.generate_content(
-                model="gemini-flash-latest",
-                contents=user_message,
-                config=genai.types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                ),
-            )
-            return response.text
+            duration = time.time() - start_time
+            print(f"[!] Gemini Error after {duration:.2f}s: {str(e)}")
+            raise
 
     async def process_chat(
         self,
