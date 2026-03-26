@@ -19,6 +19,8 @@ export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabPro
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [period, setPeriod] = useState("month");
+  const [swipedTransactionId, setSwipedTransactionId] = useState<string | null>(null);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -66,6 +68,12 @@ export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabPro
     const cat = categories.find((c) => c.id === id);
     return cat ? { name: cat.name, icon: cat.icon || "", color: cat.color || "" } : { name: "—", icon: "", color: "" };
   };
+  const formatShortDate = (value: string) =>
+    new Date(value).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
 
   const periodOptions = [
     { value: "all", label: t("db.period.all") },
@@ -104,6 +112,14 @@ export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabPro
   const tableWrapClass = 'overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl bg-white dark:bg-slate-800';
   const theadClass = 'bg-slate-50 dark:bg-slate-900/80';
   const trHoverClass = 'hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors';
+  const handleTouchStart = (clientX: number) => setTouchStartX(clientX);
+  const handleTouchEnd = (txnId: string, clientX: number) => {
+    if (touchStartX === null) return;
+    const deltaX = clientX - touchStartX;
+    if (deltaX <= -40) setSwipedTransactionId(txnId);
+    if (deltaX >= 40) setSwipedTransactionId(null);
+    setTouchStartX(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -197,43 +213,99 @@ export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabPro
           {period === "all" ? t('tx.no_transactions_short') : t('db.no_transactions_period')}
         </div>
       ) : (
-        <div className={tableWrapClass}>
-          <table className="w-full text-left">
-            <thead className={theadClass}>
-              <tr>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.date')}</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.category')}</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.note')}</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.account')}</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase text-right ${subTextClass}`}>{t('tx.form.amount')}</th>
-                <th className={`px-4 py-3 text-xs font-semibold uppercase text-center ${subTextClass}`}>{t('tx.form.action')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {filteredTransactions.map((txn) => {
-                const catInfo = getCategoryInfo(txn.category_id);
-                const isIncome = txn.type === "income";
-                return (
-                  <tr key={txn.id} className={trHoverClass}>
-                    <td className={`px-4 py-3 text-sm font-bold whitespace-nowrap text-slate-700 dark:text-slate-300`}>{new Date(txn.date).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</td>
-                    <td className="px-4 py-3 text-sm"><span className="flex items-center gap-1.5">{catInfo.icon && <span>{catInfo.icon}</span>}<span className={`font-bold ${headingClass}`}>{catInfo.name}</span></span></td>
-                    <td className={`px-4 py-3 text-sm font-medium truncate max-w-[160px] text-slate-500 dark:text-slate-400`}>{txn.note || "—"}</td>
-                    <td className={`px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300`}>{getAccountName(txn.account_id)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span className={`font-mono font-bold ${isIncome ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+        <>
+          <div className="space-y-3 md:hidden">
+            {filteredTransactions.map((txn) => {
+              const catInfo = getCategoryInfo(txn.category_id);
+              const isIncome = txn.type === "income";
+              const isSwiped = swipedTransactionId === txn.id;
+
+              return (
+                <div key={txn.id} className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                  <div className={`absolute inset-y-0 right-0 flex w-32 items-stretch transition-opacity duration-200 ${isSwiped ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}>
+                    <button
+                      onClick={() => openEditForm(txn)}
+                      className="flex-1 bg-blue-500 text-xs font-bold text-white"
+                    >
+                      {t('tx.action.edit')}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(txn.id)}
+                      className="flex-1 bg-rose-500 text-xs font-bold text-white"
+                    >
+                      {t('tx.action.delete')}
+                    </button>
+                  </div>
+
+                    <div
+                      className="relative z-10 flex items-center justify-between gap-3 bg-white px-4 py-3 transition-transform duration-200 dark:bg-slate-800"
+                      style={{ transform: isSwiped ? "translateX(-8rem)" : "translateX(0)" }}
+                    onTouchStart={(e) => handleTouchStart(e.changedTouches[0].clientX)}
+                    onTouchEnd={(e) => handleTouchEnd(txn.id, e.changedTouches[0].clientX)}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+                          {formatShortDate(txn.date)}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 text-sm">
+                        <span className={`font-bold ${headingClass}`}>{catInfo.name}</span>
+                        <span className="text-slate-300 dark:text-slate-600">|</span>
+                        <span className={`text-xs font-bold ${isIncome ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                          {isIncome ? t('tx.type.income') : t('tx.type.expense')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className={`font-mono text-sm font-bold ${isIncome ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
                         {isIncome ? "+" : "-"}{Number(txn.amount).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} đ
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <button onClick={() => openEditForm(txn)} className="text-blue-400 hover:text-blue-300 text-sm font-medium mr-3 transition-colors">{t('tx.action.edit')}</button>
-                      <button onClick={() => setConfirmDelete(txn.id)} className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors">{t('tx.action.delete')}</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className={`${tableWrapClass} hidden md:block`}>
+            <table className="w-full text-left">
+              <thead className={theadClass}>
+                <tr>
+                  <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.date')}</th>
+                  <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.category')}</th>
+                  <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.note')}</th>
+                  <th className={`px-4 py-3 text-xs font-semibold uppercase ${subTextClass}`}>{t('tx.form.account')}</th>
+                  <th className={`px-4 py-3 text-xs font-semibold uppercase text-right ${subTextClass}`}>{t('tx.form.amount')}</th>
+                  <th className={`px-4 py-3 text-xs font-semibold uppercase text-center ${subTextClass}`}>{t('tx.form.action')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {filteredTransactions.map((txn) => {
+                  const catInfo = getCategoryInfo(txn.category_id);
+                  const isIncome = txn.type === "income";
+                  return (
+                    <tr key={txn.id} className={trHoverClass}>
+                      <td className={`px-4 py-3 text-sm font-bold whitespace-nowrap text-slate-700 dark:text-slate-300`}>{new Date(txn.date).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</td>
+                      <td className="px-4 py-3 text-sm"><span className="flex items-center gap-1.5">{catInfo.icon && <span>{catInfo.icon}</span>}<span className={`font-bold ${headingClass}`}>{catInfo.name}</span></span></td>
+                      <td className={`px-4 py-3 text-sm font-medium truncate max-w-[160px] text-slate-500 dark:text-slate-400`}>{txn.note || "—"}</td>
+                      <td className={`px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300`}>{getAccountName(txn.account_id)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span className={`font-mono font-bold ${isIncome ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                          {isIncome ? "+" : "-"}{Number(txn.amount).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} đ
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <button onClick={() => openEditForm(txn)} className="text-blue-400 hover:text-blue-300 text-sm font-medium mr-3 transition-colors">{t('tx.action.edit')}</button>
+                        <button onClick={() => setConfirmDelete(txn.id)} className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors">{t('tx.action.delete')}</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <ConfirmModal isOpen={!!confirmDelete} title={t('tx.delete_confirm_title')} message={t('tx.delete_confirm_msg')} onConfirm={confirmDeleteAction} onCancel={() => setConfirmDelete(null)} />
