@@ -2,17 +2,23 @@ import { useState, useEffect, useCallback } from "react";
 import { listTransactions, createTransaction, updateTransaction, deleteTransaction, listAccounts, listCategories } from "../service/api";
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
+import MobilePageHeader from "./MobilePageHeader";
 import { useLanguage } from "../context/LanguageContext";
 
 interface Transaction { id: string; amount: number; type: string; date: string; note: string | null; account_id: string; category_id: string | null; created_at: string; }
 interface Account { id: string; name: string; type: string; }
 interface Category { id: string; name: string; type: string; icon: string | null; color: string | null; }
 
-export default function TransactionsTab() {
+interface TransactionsTabProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabProps) {
   const { t, language } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [period, setPeriod] = useState("month");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -61,6 +67,36 @@ export default function TransactionsTab() {
     return cat ? { name: cat.name, icon: cat.icon || "", color: cat.color || "" } : { name: "—", icon: "", color: "" };
   };
 
+  const periodOptions = [
+    { value: "all", label: t("db.period.all") },
+    { value: "day", label: t("db.period.day") },
+    { value: "week", label: language === "vi" ? "Tuần" : t("db.period.week") },
+    { value: "month", label: language === "vi" ? "Tháng" : t("db.period.month") },
+    { value: "year", label: language === "vi" ? "Năm" : t("db.period.year") },
+  ];
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(startOfToday);
+  const weekday = startOfToday.getDay();
+  const diffToMonday = weekday === 0 ? 6 : weekday - 1;
+  startOfWeek.setDate(startOfToday.getDate() - diffToMonday);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+  const filteredTransactions = transactions.filter((txn) => {
+    if (period === "all") return true;
+
+    const txnDate = new Date(txn.date);
+    if (Number.isNaN(txnDate.getTime())) return false;
+
+    if (period === "day") return txnDate >= startOfToday;
+    if (period === "week") return txnDate >= startOfWeek;
+    if (period === "month") return txnDate >= startOfMonth;
+    if (period === "year") return txnDate >= startOfYear;
+    return true;
+  });
+
   const cardClass = 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-3xl';
   const headingClass = 'text-slate-900 dark:text-white';
   const subTextClass = 'text-slate-500 dark:text-slate-400 font-bold';
@@ -71,9 +107,36 @@ export default function TransactionsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className={`text-xl font-bold ${headingClass}`}>{t('tx.title')}</h2>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors text-sm">{t('tx.add')}</button>
+      <MobilePageHeader
+        onOpenMobileMenu={onOpenMobileMenu}
+        rightSlot={
+          <FancySelect
+            value={period}
+            onChange={setPeriod}
+            options={periodOptions}
+            className="w-fit"
+            buttonClassName="ml-auto inline-flex w-auto justify-end gap-0.5 border-none bg-transparent px-0 py-0 text-right shadow-none hover:border-transparent dark:bg-transparent"
+            dropdownClassName="right-0 w-max min-w-[7.25rem] origin-top-right z-[70]"
+            showCheckmark={false}
+          />
+        }
+      />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className={`text-xl font-bold ${headingClass}`}>{t('tx.title')}</h2>
+          <button onClick={() => { resetForm(); setShowForm(true); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors text-sm md:hidden">{t('tx.add')}</button>
+        </div>
+        <div className="hidden md:flex items-center gap-3 sm:justify-end">
+          <div className="w-full sm:w-40">
+            <FancySelect
+              value={period}
+              onChange={setPeriod}
+              options={periodOptions}
+            />
+          </div>
+          <button onClick={() => { resetForm(); setShowForm(true); }} className="hidden px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors text-sm md:inline-flex">{t('tx.add')}</button>
+        </div>
       </div>
 
       {message && (
@@ -129,8 +192,10 @@ export default function TransactionsTab() {
 
       {loading ? (
         <div className={`text-center py-10 ${subTextClass}`}>{t('common.loading')}</div>
-      ) : transactions.length === 0 ? (
-        <div className={`text-center py-10 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl ${subTextClass}`}>{t('tx.no_transactions_short')}</div>
+      ) : filteredTransactions.length === 0 ? (
+        <div className={`text-center py-10 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl ${subTextClass}`}>
+          {period === "all" ? t('tx.no_transactions_short') : t('db.no_transactions_period')}
+        </div>
       ) : (
         <div className={tableWrapClass}>
           <table className="w-full text-left">
@@ -145,7 +210,7 @@ export default function TransactionsTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {transactions.map((txn) => {
+              {filteredTransactions.map((txn) => {
                 const catInfo = getCategoryInfo(txn.category_id);
                 const isIncome = txn.type === "income";
                 return (

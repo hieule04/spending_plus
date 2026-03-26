@@ -1,73 +1,57 @@
 import type { ReactElement, ReactNode, SVGProps } from "react";
+import { useLanguage } from "../context/LanguageContext";
 
-type MobileTab = "home" | "chat" | "history" | "profile";
+type TabType = 'system' | 'transactions' | 'savings' | 'accounts' | 'categories' | 'budgets' | 'debts' | 'chat' | 'profile';
 
 interface MobileLayoutProps {
   children: ReactNode;
-  activeTab?: MobileTab;
-  onTabChange?: (tab: MobileTab) => void;
+  activeTab?: TabType;
+  onTabChange?: (tab: TabType) => void;
 }
 
 interface NavItem {
-  id: MobileTab;
+  id: TabType;
   label: string;
   Icon: (props: SVGProps<SVGSVGElement>) => ReactElement;
 }
 
 const HomeIcon = (props: SVGProps<SVGSVGElement>) => (
-  <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5 12 3l9 7.5" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 9.75V21h13.5V9.75" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 21v-6h4.5v6" />
+  <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
   </svg>
 );
 
 const ChatIcon = (props: SVGProps<SVGSVGElement>) => (
-  <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" {...props}>
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M7 16.5c-1.933 0-3.5-1.567-3.5-3.5v-5C3.5 6.067 5.067 4.5 7 4.5h10c1.933 0 3.5 1.567 3.5 3.5v5c0 1.933-1.567 3.5-3.5 3.5h-5.25L7.5 20v-3.5H7Z"
-    />
-  </svg>
-);
-
-const HistoryIcon = (props: SVGProps<SVGSVGElement>) => (
-  <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 1 0 2.197-5.303" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 4.5v4.5H9" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25V12l2.625 2.625" />
+  <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12.375m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
   </svg>
 );
 
 const ProfileIcon = (props: SVGProps<SVGSVGElement>) => (
-  <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" {...props}>
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.118a8.966 8.966 0 0 1 15 0"
-    />
+  <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.118a8.966 8.966 0 0 1 15 0" />
   </svg>
 );
 
-const navItems: NavItem[] = [
-  { id: "home", label: "Home", Icon: HomeIcon },
-  { id: "chat", label: "Chat", Icon: ChatIcon },
-  { id: "history", label: "Lịch sử", Icon: HistoryIcon },
-  { id: "profile", label: "Cá nhân", Icon: ProfileIcon },
-];
-
 export default function MobileLayout({
   children,
-  activeTab = "home",
+  activeTab = "system",
   onTabChange,
 }: MobileLayoutProps) {
-  return (
-    <div className="relative flex h-[100dvh] flex-col bg-gray-50">
-      <main className="flex-1 overflow-y-auto pb-24">{children}</main>
+  const { t } = useLanguage();
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 rounded-t-3xl border-t border-gray-200 bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
-        <div className="mx-auto flex w-full max-w-md items-start justify-between">
+  const navItems: NavItem[] = [
+    { id: "system", label: t('nav.dashboard'), Icon: HomeIcon },
+    { id: "chat", label: t('nav.chat'), Icon: ChatIcon },
+    { id: "profile", label: t('nav.profile'), Icon: ProfileIcon },
+  ];
+
+  return (
+    <div className="relative flex h-[100dvh] flex-col overflow-hidden overscroll-none bg-gray-50 dark:bg-slate-900">
+      <main className="flex-1 overflow-y-auto overscroll-none pb-[calc(env(safe-area-inset-bottom)+6.75rem)]">{children}</main>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-40 rounded-t-3xl border-t border-gray-200 dark:border-slate-800 bg-white/95 dark:bg-slate-800/95 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
+        <div className="mx-auto flex w-full max-w-md items-center justify-between">
           {navItems.map(({ id, label, Icon }) => {
             const isActive = id === activeTab;
 
@@ -81,14 +65,14 @@ export default function MobileLayout({
               >
                 <Icon
                   className={
-                    isActive ? "h-6 w-6 text-emerald-500" : "h-6 w-6 text-gray-300"
+                    isActive ? "h-6 w-6 text-blue-600 dark:text-blue-400" : "h-6 w-6 text-gray-300 dark:text-slate-600"
                   }
                 />
                 <span
                   className={
                     isActive
-                      ? "text-[11px] font-semibold text-emerald-600"
-                      : "text-[11px] font-medium text-gray-400"
+                      ? "min-h-[1.9rem] max-w-[4.8rem] text-[10px] font-bold leading-tight text-blue-600 dark:text-blue-400"
+                      : "min-h-[1.9rem] max-w-[4.8rem] text-[10px] font-medium leading-tight text-gray-400 dark:text-slate-500"
                   }
                 >
                   {label}
@@ -96,8 +80,8 @@ export default function MobileLayout({
                 <span
                   className={
                     isActive
-                      ? "h-1.5 w-1.5 rounded-full bg-emerald-500"
-                      : "h-1.5 w-1.5 rounded-full bg-transparent"
+                      ? "h-1 w-1 rounded-full bg-blue-600 dark:bg-blue-400 mt-0.5"
+                      : "h-1 w-1 rounded-full bg-transparent mt-0.5"
                   }
                   aria-hidden="true"
                 />

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import MobilePageHeader from "./MobilePageHeader";
 import { sendChatMessage, getChatHistory } from "../service/api";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -9,7 +10,11 @@ interface Message {
   timestamp: Date;
 }
 
-export default function ChatTab() {
+interface ChatTabProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export default function ChatTab({ onOpenMobileMenu }: ChatTabProps) {
   const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -122,6 +127,8 @@ export default function ChatTab() {
 
   return (
     <div className="flex flex-col h-full animate-fade-in relative">
+      <MobilePageHeader onOpenMobileMenu={onOpenMobileMenu} className="mb-4" />
+
       {/* Toast thông báo giao dịch tự động */}
       {showToast && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 animate-fade-in">

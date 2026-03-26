@@ -6,10 +6,13 @@ interface FancySelectProps {
   options: { label: string; value: string | number }[];
   placeholder?: string;
   className?: string;
+  buttonClassName?: string;
+  dropdownClassName?: string;
+  showCheckmark?: boolean;
   disabled?: boolean;
 }
 
-export default function FancySelect({ value, onChange, options, placeholder = "Chọn...", className = "", disabled = false }: FancySelectProps) {
+export default function FancySelect({ value, onChange, options, placeholder = "Chọn...", className = "", buttonClassName = "", dropdownClassName = "", showCheckmark = true, disabled = false }: FancySelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,7 +39,7 @@ export default function FancySelect({ value, onChange, options, placeholder = "C
       <button
         type="button"
         disabled={disabled}
-        className={`w-full px-4 py-3 rounded-2xl flex items-center justify-between font-medium outline-none transition-all ${baseClass} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-blue-500/50'}`}
+        className={`w-full px-4 py-3 rounded-2xl flex items-center justify-between font-medium outline-none transition-all ${baseClass} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-blue-500/50'} ${buttonClassName}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
@@ -46,7 +49,7 @@ export default function FancySelect({ value, onChange, options, placeholder = "C
       </button>
 
       {isOpen && (
-        <div className={`absolute z-50 w-full mt-2 rounded-[1.5rem] overflow-hidden p-1 animate-slide-up origin-top ${dropdownClass}`}>
+        <div className={`absolute z-50 w-full mt-2 rounded-[1.5rem] overflow-hidden p-1 animate-slide-up origin-top ${dropdownClass} ${dropdownClassName}`}>
           <ul className="max-h-60 overflow-y-auto custom-scrollbar">
             {options.map((option) => (
               <li
@@ -58,7 +61,7 @@ export default function FancySelect({ value, onChange, options, placeholder = "C
                 className={`px-4 py-3 rounded-xl cursor-pointer text-sm font-semibold transition-all flex items-center justify-between ${itemHoverClass} ${String(value) === String(option.value) ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : ''}`}
               >
                 {option.label}
-                {String(value) === String(option.value) && (
+                {showCheckmark && String(value) === String(option.value) && (
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>

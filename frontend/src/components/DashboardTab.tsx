@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import FancySelect from "./FancySelect";
+import MobilePageHeader from "./MobilePageHeader";
 import { getSummaryStats } from "../service/api";
 import { 
   PieChart, Pie, Cell, Tooltip as PieTooltip, Legend, 
@@ -12,12 +14,24 @@ interface ColumnData { name: string; income: number; expense: number; }
 interface LineData { date: string; income: number; expense: number; }
 interface SummaryStats { balance: number; total_income: number; total_expense: number; pie_data: CategoryExpense[]; column_data: ColumnData[]; line_data: LineData[]; }
 
-export default function DashboardTab() {
+interface DashboardTabProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
   const { t, language } = useLanguage();
   const [stats, setStats] = useState<SummaryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<string>("month");
+
+  const periodOptions = [
+    { value: 'all', label: t('db.period.all') },
+    { value: 'day', label: t('db.period.day') },
+    { value: 'week', label: language === 'vi' ? 'Tuần' : t('db.period.week') },
+    { value: 'month', label: language === 'vi' ? 'Tháng' : t('db.period.month') },
+    { value: 'year', label: language === 'vi' ? 'Năm' : t('db.period.year') },
+  ];
 
   const fetchStats = async (selectedPeriod: string) => {
     try { 
@@ -86,23 +100,33 @@ export default function DashboardTab() {
 
   return (
     <div className="space-y-6 animate-fade-in mb-6">
+      <div className="md:hidden pt-[env(safe-area-inset-top)]">
+        <MobilePageHeader
+          onOpenMobileMenu={onOpenMobileMenu}
+          rightSlot={
+            <FancySelect
+              value={period}
+              onChange={setPeriod}
+              options={periodOptions}
+              className="w-fit"
+              buttonClassName="ml-auto inline-flex w-auto justify-end gap-2 border-none bg-transparent px-0 py-0 text-right shadow-none hover:border-transparent dark:bg-transparent"
+              dropdownClassName="right-0 w-max min-w-[7.25rem] origin-top-right z-[70]"
+              showCheckmark={false}
+            />
+          }
+        />
+      </div>
       
       {/* Time Filter Bar */}
-      <div className={`flex flex-wrap items-center justify-between gap-4 p-2 sm:p-2.5 rounded-2xl shadow-sm ${cardClass}`}>
+      <div className={`hidden md:flex flex-wrap items-center justify-between gap-4 p-2 sm:p-2.5 rounded-2xl shadow-sm ${cardClass}`}>
         <h2 className={`font-bold px-3 hidden sm:block ${headingClass}`}>{t('db.title')}</h2>
         <div className={`flex p-1 rounded-xl w-full sm:w-auto overflow-x-auto hide-scrollbar bg-slate-100 dark:bg-slate-900/50`}>
-          {[
-            { id: 'all', label: t('db.period.all') },
-            { id: 'day', label: t('db.period.day') },
-            { id: 'week', label: t('db.period.week') },
-            { id: 'month', label: t('db.period.month') },
-            { id: 'year', label: t('db.period.year') }
-          ].map(p => (
+          {periodOptions.map(p => (
             <button
-              key={p.id}
-              onClick={() => setPeriod(p.id)}
+              key={String(p.value)}
+              onClick={() => setPeriod(String(p.value))}
               className={`px-4 py-2 text-sm font-semibold rounded-lg whitespace-nowrap transition-all ${
-                period === p.id 
+                period === p.value 
                   ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' 
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}

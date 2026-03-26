@@ -10,16 +10,24 @@ import SavingsTab from "./components/SavingsTab"
 import DebtsTab from "./components/DebtsTab"
 import ChatTab from "./components/ChatTab"
 import TopBar from "./components/TopBar"
+import MobileLayout from "./components/MobileLayout"
+import MobileProfilePanel from "./components/MobileProfilePanel"
+import AppWordmark from "./components/AppWordmark"
+import MobilePageHeader from "./components/MobilePageHeader"
+import { getProfile } from "./service/api"
 import "./App.css"
 import { useLanguage } from "./context/LanguageContext"
 
-type TabType = 'system' | 'transactions' | 'savings' | 'accounts' | 'categories' | 'budgets' | 'debts' | 'chat';
+type TabType = 'system' | 'transactions' | 'savings' | 'accounts' | 'categories' | 'budgets' | 'debts' | 'chat' | 'profile';
 
 function App() {
   const { t, language } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'none' | 'login' | 'register'>('none');
   const [activeTab, setActiveTab] = useState<TabType>('system');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   
   useEffect(() => {
     const checkAuth = () => {
@@ -36,6 +44,23 @@ function App() {
       window.removeEventListener("user_logout", checkAuth);
     };
   }, [])
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const fetchProfile = async () => {
+      const data = await getProfile();
+      setUserName(data?.full_name?.trim() || "");
+      setUserAvatar(data?.avatar_url || null);
+    };
+
+    fetchProfile();
+    window.addEventListener("profile_updated", fetchProfile);
+
+    return () => {
+      window.removeEventListener("profile_updated", fetchProfile);
+    };
+  }, [isLoggedIn]);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -54,15 +79,52 @@ function App() {
     { id: 'debts',         label: t('nav.debts') },
     { id: 'chat',          label: t('nav.chat') },
   ];
+  const mobileGreeting = language === 'vi' ? 'Xin chào' : 'Hello';
+  const mobileDrawerIds = ['transactions', 'accounts', 'savings', 'budgets', 'categories', 'debts'] as const;
+  type MobileDrawerTabId = typeof mobileDrawerIds[number];
+  const mobileDrawerMeta: Record<MobileDrawerTabId, { accent: string; description: string }> = {
+    transactions: {
+      accent: 'from-cyan-500 to-blue-500',
+      description: language === 'vi' ? 'Ghi lại mọi khoản thu chi' : 'Capture every cash flow',
+    },
+    accounts: {
+      accent: 'from-violet-500 to-fuchsia-500',
+      description: language === 'vi' ? 'Theo dõi số dư các ví' : 'Track balances across wallets',
+    },
+    savings: {
+      accent: 'from-emerald-500 to-teal-500',
+      description: language === 'vi' ? 'Bám sát mục tiêu tiết kiệm' : 'Stay on top of saving goals',
+    },
+    budgets: {
+      accent: 'from-amber-500 to-orange-500',
+      description: language === 'vi' ? 'Kiểm soát giới hạn chi tiêu' : 'Keep spending within plan',
+    },
+    categories: {
+      accent: 'from-pink-500 to-rose-500',
+      description: language === 'vi' ? 'Sắp xếp nhóm giao dịch rõ ràng' : 'Organize transaction groups clearly',
+    },
+    debts: {
+      accent: 'from-slate-500 to-slate-700',
+      description: language === 'vi' ? 'Theo dõi các khoản vay nợ' : 'Monitor outstanding debts',
+    },
+  };
+  const mobileDrawerTabs = tabs
+    .filter((tab): tab is { id: MobileDrawerTabId; label: string } => mobileDrawerIds.includes(tab.id as MobileDrawerTabId))
+    .map((tab) => {
+      return {
+        ...tab,
+        accent: mobileDrawerMeta[tab.id].accent,
+        description: mobileDrawerMeta[tab.id].description,
+      };
+    });
+  const displayName = userName || (language === 'vi' ? 'bạn' : 'there');
 
   if (!isLoggedIn) {
     return (
-      <div className={`h-screen flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
+      <div className={`h-[100dvh] overscroll-none flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
         <div className={`max-w-md w-full rounded-3xl shadow-2xl p-8 text-center relative animate-fade-in bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
           <header className={`mb-8 ${authMode !== 'none' ? 'opacity-80 scale-95 transition-all' : 'transition-all scale-100'}`}>
-            <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent pb-2 mb-2 tracking-tight leading-[1.2]">
-              Spending Plus
-            </h1>
+             <AppWordmark size="lg" className="justify-center pb-2 mb-2" />
             <p className={`text-lg font-medium text-slate-500 dark:text-slate-400`}>
               {language === 'vi' ? 'Quản lý tài chính thông minh' : 'Smart Finance Management'}
             </p>
@@ -120,49 +182,97 @@ function App() {
   }
 
   return (
-    <div className={`h-screen flex flex-col items-center font-sans transition-colors duration-300 ease-in-out overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
+    <div className={`h-[100dvh] overscroll-none flex flex-col items-center font-sans transition-colors duration-300 ease-in-out overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
      <div className="w-full max-w-[1600px] h-full flex flex-col md:flex-row relative gap-4 p-4 sm:p-6 lg:p-8">
       
       {/* Mobile Top Header */}
-      <header className={`md:hidden flex-none rounded-3xl px-5 py-4 flex items-center justify-between z-30 shadow-sm relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg bg-blue-600 shadow-blue-500/20`}>
-            <span className="text-white text-xl font-black">S+</span>
-          </div>
-          <h1 className="text-xl font-black bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent pb-1">Spending Plus</h1>
-        </div>
-        <div className="relative">
-          <TopBar onLogout={handleLogout} direction="down" />
-        </div>
-      </header>
+      <div className="md:hidden flex flex-col h-full w-full">
+        {!['system', 'transactions', 'chat', 'profile'].includes(activeTab) && (
+          <MobilePageHeader onOpenMobileMenu={() => setMobileMenuOpen(true)} />
+        )}
 
-          {/* Mobile Navigation Footer (Sticky) */}
-          <div className={`md:hidden flex items-center justify-around p-3 border-t shrink-0 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 px-2`}>
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`p-2 rounded-xl transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-blue-100 dark:bg-blue-600 text-blue-700 dark:text-white'
-                    : 'text-slate-500 dark:text-slate-400'
-                }`}
-              >
-                <div className="text-[10px] font-bold uppercase">{tab.label.substring(0, 3)}</div>
-              </button>
-            ))}
+        {/* Mobile Drawer */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-[60] flex">
+            <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setMobileMenuOpen(false)} />
+            <div className="relative flex h-full w-[19rem] max-w-[86vw] flex-col overflow-y-auto rounded-r-[2rem] border-r border-slate-700/60 bg-[linear-gradient(180deg,rgba(15,23,42,0.97),rgba(15,23,42,0.92))] shadow-[0_30px_80px_rgba(15,23,42,0.35)] backdrop-blur-xl animate-slide-in-left">
+              <div className="relative overflow-hidden border-b border-slate-700/70 px-5 pb-5 pt-6">
+                <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.28),_transparent_62%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.22),_transparent_48%)]" />
+                <div className="relative flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-14 w-14 overflow-hidden rounded-2xl border border-white/70 bg-gradient-to-br from-blue-500 via-cyan-500 to-emerald-400 shadow-lg shadow-blue-500/20">
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="User Avatar" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xl font-black text-white">
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
+                        {mobileGreeting}
+                      </p>
+                      <h2 className="mt-1 text-xl font-black tracking-tight text-white">
+                        {displayName}
+                      </h2>
+                    </div>
+                  </div>
+                  <button onClick={() => setMobileMenuOpen(false)} className="rounded-full bg-white/10 p-2 text-slate-400 shadow-sm transition-colors hover:bg-white/15 hover:text-white">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                </div>
+              </div>
+              <nav className="flex-1 px-5 py-5">
+                {mobileDrawerTabs.map((tab, index) => (
+                  <div key={tab.id}>
+                    <button
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setMobileMenuOpen(false);
+                      }}
+                      className="group flex w-full items-center justify-between gap-4 py-4 text-left transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-sm font-bold transition-colors ${activeTab === tab.id ? 'text-white' : 'text-slate-200 group-hover:text-white'}`}>
+                          {tab.label}
+                        </p>
+                        <p className={`mt-1 text-xs leading-5 transition-colors ${activeTab === tab.id ? 'text-slate-300' : 'text-slate-500 group-hover:text-slate-400'}`}>
+                          {tab.description}
+                        </p>
+                      </div>
+                      <svg className={`h-4 w-4 shrink-0 transition-all ${activeTab === tab.id ? 'translate-x-0.5 text-slate-300' : 'text-slate-600 group-hover:translate-x-0.5 group-hover:text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                    {index < mobileDrawerTabs.length - 1 && (
+                      <div className="h-px bg-white/8" />
+                    )}
+                  </div>
+                ))}
+              </nav>
+            </div>
           </div>
+        )}
+
+        <MobileLayout activeTab={activeTab} onTabChange={setActiveTab}>
+           <div className="animate-fade-in p-4">
+              {activeTab === 'system' && <DashboardTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
+              {activeTab === 'transactions' && <TransactionsTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
+              {activeTab === 'savings' && <SavingsTab />}
+              {activeTab === 'budgets' && <BudgetsTab />}
+              {activeTab === 'accounts' && <AccountsTab />}
+              {activeTab === 'categories' && <CategoriesTab />}
+              {activeTab === 'debts' && <DebtsTab />}
+              {activeTab === 'chat' && <ChatTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
+              {activeTab === 'profile' && <MobileProfilePanel onLogout={handleLogout} onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
+           </div>
+        </MobileLayout>
+      </div>
 
       {/* Desktop Left Sidebar */}
       <aside className={`hidden md:flex w-64 flex-none rounded-3xl shadow-sm flex-col p-6 z-30 relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
-        <div className="flex items-center gap-3 mb-10">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg bg-blue-600 shadow-blue-500/20`}>
-            <span className="text-white text-xl font-black">S+</span>
-          </div>
+        <div className="mb-10">
           <div>
-            <h1 className={`text-xl font-black bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent pb-1 leading-none tracking-tight`}>
-              Spending Plus
-            </h1>
+            <AppWordmark size="md" className="pb-1" />
             <p className={`text-[10px] font-bold uppercase tracking-widest mt-1.5 text-slate-600 dark:text-slate-500`}>Finance App</p>
           </div>
         </div>
@@ -189,8 +299,8 @@ function App() {
         </div>
       </aside>
 
-      {/* Main Content Pane */}
-      <main className={`flex-1 overflow-auto rounded-3xl shadow-inner flex flex-col relative z-20 bg-white/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/50`}>
+      {/* Main Content Pane (Desktop) */}
+      <main className={`hidden md:flex flex-1 overflow-auto rounded-3xl shadow-inner flex flex-col relative z-20 bg-white/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/50`}>
         <div className="flex-1 relative overflow-auto p-4 sm:p-6 lg:p-8">
           <div className="animate-fade-in h-full">
             {activeTab === 'system' && <DashboardTab />}
