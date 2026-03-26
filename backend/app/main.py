@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, Response
 import sys
 import os
 from pathlib import Path
@@ -42,7 +42,11 @@ app = FastAPI(title="Spending Plus API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://spendingplus.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -85,6 +89,11 @@ async def global_exception_handler(request, exc):
     print(f"[ERROR] Global Exception: {str(exc)}")
     traceback.print_exc()
     return HTMLResponse(content=f"Internal Server Error: {str(exc)}", status_code=500)
+
+
+@app.options("/{full_path:path}", include_in_schema=False)
+async def preflight_handler(full_path: str) -> Response:
+    return Response(status_code=200)
 
 
 # ==========================================
