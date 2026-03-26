@@ -52,11 +52,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.options("/{rest_of_path:path}")
-async def preflight_handler(rest_of_path: str):
-    return {}
-
-
 # Thêm logging để debug lỗi API trong file EXE
 @app.middleware("http")
 async def log_requests(request, call_next):
