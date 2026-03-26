@@ -40,13 +40,9 @@ app = FastAPI(title="Spending Plus API")
 # 2. MIDDLEWARE
 # ==========================================
 
-# CORS cho React (Vite) và Tauri
-# Cho phép tất cả origins khi đóng gói EXE để tránh lỗi CORS phức tạp
-_origins = ["*"] if getattr(sys, 'frozen', False) else settings.CORS_ORIGINS
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
