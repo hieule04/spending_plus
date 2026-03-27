@@ -6,10 +6,12 @@ import {
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
 
+import CurrencyInput from "./CurrencyInput";
+
 import { useLanguage } from "../context/LanguageContext";
 
 export default function DebtsTab() {
-  const { t, language } = useLanguage();
+  const { t, language, currency, formatAmount } = useLanguage();
 
   const [debts, setDebts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,8 +183,8 @@ export default function DebtsTab() {
     }
   };
 
-  const fmtCurrency = (val: number) =>
-    Number(val).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US');
+  // const fmtCurrency = (val: number) =>
+  //   Number(val).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US');
 
   const gridCardClass = "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-3xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl";
 
@@ -272,8 +274,8 @@ export default function DebtsTab() {
                 <div className="flex justify-between items-end mb-2">
                   <div className={`font-semibold ${cardSubClass} text-sm`}>
                     <span className={`text-lg ${cardTitleClass}`}>
-                      {fmtCurrency(Number(debt.remaining_amount))}
-                    </span> / {fmtCurrency(Number(debt.total_amount))}đ
+                      {formatAmount(debt.remaining_amount)}
+                    </span> / {formatAmount(debt.total_amount)}
                   </div>
                   <div className={`text-xs font-black ${isCompleted ? 'text-emerald-600' : 'text-blue-500'}`}>
                     {Math.min(pctPaid, 100).toFixed(0)}% {t('debt.paid')}
@@ -297,7 +299,7 @@ export default function DebtsTab() {
                 {/* Due date info */}
                 <div className={`flex justify-between items-center mb-4 text-xs font-bold ${cardSubClass}`}>
                   <span>{t('debt.next_due')}: {getNextDueDate(debt.due_date)}</span>
-                  <span>{t('debt.monthly')}: {fmtCurrency(Number(debt.monthly_payment))}đ</span>
+                  <span>{t('debt.monthly')}: {formatAmount(debt.monthly_payment)}</span>
                 </div>
 
                 {/* Pay button */}
@@ -353,26 +355,22 @@ export default function DebtsTab() {
               </div>
               <div>
                 <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('debt.total')}</label>
-                <input
-                  type="number"
-                  required
-                  min="0"
+                <CurrencyInput
                   value={totalAmount}
-                  onChange={(e) => setTotalAmount(e.target.value)}
+                  onChange={setTotalAmount}
+                  required
                   className={`w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white`}
-                  placeholder="50,000,000"
+                  placeholder="50 000 000"
                 />
               </div>
               <div>
                 <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('debt.monthly')}</label>
-                <input
-                  type="number"
-                  required
-                  min="0"
+                <CurrencyInput
                   value={monthlyPayment}
-                  onChange={(e) => setMonthlyPayment(e.target.value)}
+                  onChange={setMonthlyPayment}
+                  required
                   className={`w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white`}
-                  placeholder="5,000,000"
+                  placeholder="5 000 000"
                 />
               </div>
               <div>
@@ -407,7 +405,7 @@ export default function DebtsTab() {
               {t('debt.creditor')}: <span className={textTitleClass}>{selectedDebt?.creditor_name}</span>
             </p>
             <div className={`mb-4 p-3 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400`}>
-              {t('debt.remaining')}: {fmtCurrency(Number(selectedDebt?.remaining_amount))}đ
+              {t('debt.remaining')}: {formatAmount(selectedDebt?.remaining_amount || 0)}
             </div>
 
             <form onSubmit={handlePay} className="space-y-4">
@@ -417,19 +415,17 @@ export default function DebtsTab() {
                   value={payAccountId}
                   onChange={(val) => setPayAccountId(val)}
                   options={accounts.map((a) => ({
-                    label: `${a.name} (${fmtCurrency(Number(a.balance))}đ)`,
+                    label: `${a.name} (${formatAmount(a.balance)})`,
                     value: a.id
                   }))}
                 />
               </div>
               <div>
                 <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('debt.pay_amount_label')}</label>
-                <input
-                  type="number"
-                  required
-                  min="0"
+                <CurrencyInput
                   value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
+                  onChange={setPayAmount}
+                  required
                   className={`w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white`}
                   placeholder="0"
                 />

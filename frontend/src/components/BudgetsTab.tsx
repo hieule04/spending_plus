@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { getBudgetReport, upsertBudget, listCategories, deleteBudget } from "../service/api";
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
+import CurrencyInput from "./CurrencyInput";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function BudgetsTab() {
-  const { t, language } = useLanguage();
+  const { t, language, formatAmount } = useLanguage();
   
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
@@ -55,7 +56,8 @@ export default function BudgetsTab() {
       setAmountLimit(budget.amount_limit.toString());
     } else {
       setEditingBudget(null);
-      setSelectedCategory("");
+      // Pre-select the first category if available
+      setSelectedCategory(categories.length > 0 ? categories[0].id : "");
       setAmountLimit("");
     }
     setIsModalOpen(true);
@@ -63,7 +65,11 @@ export default function BudgetsTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCategory || !amountLimit) return;
+    if (!selectedCategory || !amountLimit) {
+      setMessage({ text: t('bg.msg.please_select'), type: "error" }); // Assuming this translation key exists or I'll add a default
+      setTimeout(() => setMessage(null), 3000);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const res = await upsertBudget({
@@ -105,6 +111,7 @@ export default function BudgetsTab() {
   const textTitleClass = "text-slate-900 dark:text-white";
   const textSubClass = "text-slate-500 dark:text-slate-400";
   const progressBgClass = "bg-slate-100 dark:bg-slate-900";
+  const cardTitleClass = "text-slate-900 dark:text-white"; // Added for consistency with diff
 
   return (
     <div className="h-full flex flex-col relative w-full h-full p-2">
@@ -201,7 +208,9 @@ export default function BudgetsTab() {
 
                 <div className="flex justify-between items-end mb-2">
                   <div className={`font-semibold ${textSubClass} text-sm`}>
-                    <span className={textTitleClass}>{report.total_spent.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}</span> / {report.amount_limit.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ
+                    <span className={`text-lg ${cardTitleClass}`}>
+                      {formatAmount(report.total_spent)}
+                    </span> / {formatAmount(report.amount_limit)}
                   </div>
                 </div>
 
@@ -216,8 +225,8 @@ export default function BudgetsTab() {
                 
                 <div className={`text-xs font-semibold text-right ${exceedLimit ? textAlertClass : textSubClass}`}>
                   {exceedLimit 
-                    ? `${t('bg.over')} ${Math.abs(report.remaining).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ` 
-                    : `${t('bg.remaining')} ${report.remaining.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ`}
+                    ? `${t('bg.over')} ${formatAmount(Math.abs(report.remaining))}` 
+                    : `${t('bg.remaining')} ${formatAmount(report.remaining)}`}
                 </div>
               </div>
             );
@@ -261,15 +270,12 @@ export default function BudgetsTab() {
               </div>
 
               <div>
-                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('bg.form.limit')} (VNĐ)</label>
-                <input 
-                  type="number" 
-                  required
-                  min="0"
-                  step="1000"
+                <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('bg.form.limit')}</label>
+                <CurrencyInput
                   value={amountLimit}
-                  onChange={(e) => setAmountLimit(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white`}
+                  onChange={setAmountLimit}
+                  required
+                  className="w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   placeholder={t('bg.form.placeholder.limit')}
                 />
               </div>

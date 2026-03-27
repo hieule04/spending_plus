@@ -27,6 +27,7 @@ class User(Base):
     allow_notifications = Column(Boolean, default=True)
     otp_code = Column(String, nullable=True)
     otp_expires_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    currency = Column(String, default="đ")
 
     created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
     updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -19,7 +19,7 @@ interface DashboardTabProps {
 }
 
 export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
-  const { t, language } = useLanguage();
+  const { t, language, formatAmount } = useLanguage();
   const [stats, setStats] = useState<SummaryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +55,10 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
     return () => window.removeEventListener("refresh_transactions", handleRefresh);
   }, [period]);
 
-  const formatCurrency = (value: number) => new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US', { 
-    style: 'currency', 
-    currency: 'VND' 
-  }).format(value);
+  // const formatCurrency = (value: number) => new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US', { 
+  //   style: 'currency', 
+  //   currency: 'VND' 
+  // }).format(value);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -68,7 +68,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color || entry.fill }} className="text-sm font-medium flex items-center justify-between gap-4">
               <span>{entry.name}:</span>
-              <span>{formatCurrency(Number(entry.value))}</span>
+              <span>{formatAmount(Number(entry.value))}</span>
             </p>
           ))}
         </div>
@@ -84,7 +84,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
         <div className={`p-3 rounded-xl shadow-xl flex items-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.fill }}></div>
           <span className="text-slate-600 dark:text-slate-300 font-medium">{data.name}:</span>
-          <span className="text-slate-900 dark:text-white font-bold">{formatCurrency(Number(data.value))}</span>
+          <span className="text-slate-900 dark:text-white font-bold">{formatAmount(Number(data.value))}</span>
         </div>
       );
     }
@@ -150,17 +150,17 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
             <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-blue-500/30 shadow-blue-500/5`}>
               <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20`}></div>
               <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.balance')}</h3>
-              <p className={`text-3xl font-extrabold ${headingClass}`}>{formatCurrency(stats.balance)}</p>
+              <p className={`text-3xl font-extrabold ${headingClass}`}>{formatAmount(stats.balance)}</p>
             </div>
             <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-emerald-500/30 shadow-emerald-500/5`}>
               <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20`}></div>
               <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.income')}</h3>
-              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">+{formatCurrency(stats.total_income)}</p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">+{formatAmount(stats.total_income)}</p>
             </div>
             <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-rose-500/30 shadow-rose-500/5`}>
               <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all bg-rose-50 dark:bg-rose-500/10 group-hover:bg-rose-100 dark:group-hover:bg-rose-500/20`}></div>
               <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.expense')}</h3>
-              <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">-{formatCurrency(stats.total_expense)}</p>
+              <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">-{formatAmount(stats.total_expense)}</p>
             </div>
           </div>
 

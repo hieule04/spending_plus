@@ -5,27 +5,46 @@ import { useLanguage } from "../context/LanguageContext";
 interface ProfileModalProps { onClose: () => void; }
 
 export default function ProfileModal({ onClose }: ProfileModalProps) {
-  const { t } = useLanguage();
+  const { t, currency, setCurrency } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [selectedCurrency, setSelectedCurrency] = useState("đ");
   const [allowNotifications, setAllowNotifications] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
 
   useEffect(() => {
-    const fetchUser = async () => { setLoading(true); const data = await getProfile(); if (data) { setFullName(data.full_name || ""); setEmail(data.email || ""); setAvatarUrl(data.avatar_url || ""); setAllowNotifications(data.allow_notifications !== false); } setLoading(false); };
+    const fetchUser = async () => { 
+      setLoading(true); 
+      const data = await getProfile(); 
+      if (data) { 
+        setFullName(data.full_name || ""); 
+        setEmail(data.email || ""); 
+        setAvatarUrl(data.avatar_url || ""); 
+        setAllowNotifications(data.allow_notifications !== false); 
+        setSelectedCurrency(data.currency || "đ");
+        if (data.currency) setCurrency(data.currency);
+      } 
+      setLoading(false); 
+    };
     fetchUser();
-  }, []);
+  }, [setCurrency]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setMessage(null);
-    const updateData: any = { full_name: fullName, email, avatar_url: avatarUrl, allow_notifications: allowNotifications };
+    const updateData: any = { full_name: fullName, email, avatar_url: avatarUrl, allow_notifications: allowNotifications, currency: selectedCurrency };
     if (password.trim() !== "") updateData.password = password;
     const data = await updateProfile(updateData);
-    if (data) { setMessage({ text: t('profile.msg.update_success'), type: "success" }); setPassword(""); } else { setMessage({ text: t('profile.msg.update_error'), type: "error" }); }
+    if (data) { 
+        setMessage({ text: t('profile.msg.update_success'), type: "success" }); 
+        setPassword(""); 
+        setCurrency(selectedCurrency);
+    } else { 
+        setMessage({ text: t('profile.msg.update_error'), type: "error" }); 
+    }
     setSaving(false);
   };
 
@@ -80,6 +99,26 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
             <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.full_name')}</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} placeholder={t('profile.form.placeholder.full_name')} /></div>
             <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.email')}</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} /></div>
             <div><label className={`block mb-1 ${labelClass}`}>{t('profile.form.password_help')}</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={`w-full px-4 py-2.5 transition-colors ${inputClass}`} placeholder="••••••••" /></div>
+            
+            <div>
+              <label className={`block mb-1 ${labelClass}`}>Đơn vị tiền tệ</label>
+              <div className="grid grid-cols-3 gap-2">
+                {['đ', '$', '€'].map((curr) => (
+                  <button
+                    key={curr}
+                    type="button"
+                    onClick={() => setSelectedCurrency(curr)}
+                    className={`py-2 px-4 rounded-xl font-bold transition-all border ${
+                      selectedCurrency === curr 
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' 
+                        : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-400'
+                    }`}
+                  >
+                    {curr}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Notification Toggle */}
             <div className={`flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50`}>

@@ -23,6 +23,7 @@ class UserBase(BaseModel):
     avatar_url: Optional[str] = None
     is_active: bool = True
     allow_notifications: bool = True
+    currency: str = "đ"
 
 
 class UserCreate(UserBase):
@@ -35,6 +36,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     avatar_url: Optional[str] = None
     allow_notifications: Optional[bool] = None
+    currency: Optional[str] = None
 
 
 class UserLogin(BaseModel):

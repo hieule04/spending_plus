@@ -165,6 +165,7 @@ export const translations = {
     'bg.msg.save_error': 'Lỗi khi lưu ngân sách',
     'bg.msg.delete_success': 'Đã xóa ngân sách thành công!',
     'bg.msg.delete_error': 'Lỗi khi xóa ngân sách',
+    'bg.msg.please_select': 'Vui lòng chọn danh mục và nhập hạn mức',
     'bg.delete_confirm_title': 'Xác nhận xóa ngân sách',
     'bg.delete_confirm_msg': 'Bạn có chắc chắn muốn xóa mục ngân sách này?',
 
@@ -413,6 +414,7 @@ export const translations = {
     'bg.msg.save_error': 'Error saving budget',
     'bg.msg.delete_success': 'Budget deleted successfully!',
     'bg.msg.delete_error': 'Error deleting budget',
+    'bg.msg.please_select': 'Please select a category and enter a limit',
     'bg.delete_confirm_title': 'Confirm Delete Budget',
     'bg.delete_confirm_msg': 'Are you sure you want to delete this budget item?',
 
