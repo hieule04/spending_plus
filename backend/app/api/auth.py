@@ -12,7 +12,24 @@ from app.database import get_db
 from app import schemas, models
 from app.crud import users as crud_users
 from app.core.security import verify_password, create_access_token
-from app.utils.email import send_otp_email
+from app.core.config import settings
+import os
+from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+
+# Cấu hình kết nối Email (Sử dụng settings từ config.py cho đồng bộ)
+conf = ConnectionConfig(
+    MAIL_USERNAME = settings.MAIL_USERNAME,
+    MAIL_PASSWORD = settings.MAIL_PASSWORD,
+    MAIL_FROM = settings.MAIL_FROM or settings.MAIL_USERNAME,
+    MAIL_PORT = settings.MAIL_PORT,
+    MAIL_SERVER = settings.MAIL_SERVER,
+    MAIL_STARTTLS = True,
+    MAIL_SSL_TLS = False,
+    USE_CREDENTIALS = True,
+    VALIDATE_CERTS = False # Giữ False để tránh lỗi SSL cert trên một số môi trường dev
+)
+
+fastmail = FastMail(conf)
 
 router = APIRouter(tags=["Auth"])
 
@@ -37,8 +54,16 @@ def register(user: schemas.UserCreate, bg_tasks: BackgroundTasks, db: Session = 
             otp_code=otp_code, otp_expires_at=expires_at
         )
 
+        # Tạo nội dung email
+        message = MessageSchema(
+            subject="Xác thực tài khoản Spending Plus",
+            recipients=[new_user.email],
+            body=f"Mã xác thực của bạn là: {otp_code}",
+            subtype=MessageType.plain
+        )
+
         # Gửi email chạy ngầm
-        bg_tasks.add_task(send_otp_email, new_user.email, otp_code)
+        bg_tasks.add_task(fastmail.send_message, message)
 
         return new_user
     except HTTPException:
