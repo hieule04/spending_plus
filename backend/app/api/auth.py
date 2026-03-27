@@ -16,17 +16,20 @@ from app.core.config import settings
 import os
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 
-# Cấu hình kết nối Email (Sử dụng settings từ config.py cho đồng bộ)
+# Cấu hình kết nối Email
+# MAIL_FROM tự động dùng MAIL_USERNAME nếu biến MAIL_FROM chưa được set trên server
+_mail_from = os.getenv("MAIL_FROM") or os.getenv("MAIL_USERNAME", "")
+
 conf = ConnectionConfig(
-    MAIL_USERNAME = settings.MAIL_USERNAME,
-    MAIL_PASSWORD = settings.MAIL_PASSWORD,
-    MAIL_FROM = settings.MAIL_FROM or settings.MAIL_USERNAME,
-    MAIL_PORT = settings.MAIL_PORT,
-    MAIL_SERVER = settings.MAIL_SERVER,
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME", ""),
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", ""),
+    MAIL_FROM = _mail_from,
+    MAIL_PORT = int(os.getenv("MAIL_PORT", "587")),
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com"),
     MAIL_STARTTLS = True,
     MAIL_SSL_TLS = False,
     USE_CREDENTIALS = True,
-    VALIDATE_CERTS = False # Giữ False để tránh lỗi SSL cert trên một số môi trường dev
+    VALIDATE_CERTS = False
 )
 
 fastmail = FastMail(conf)
