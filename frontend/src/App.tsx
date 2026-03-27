@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
-import RegisterForm from "./components/RegisterForm"
 import LoginForm from "./components/LoginForm"
+import RegisterForm from "./components/RegisterForm"
+import VerifyOTPForm from "./components/VerifyOTPForm"
 import AccountsTab from "./components/AccountsTab"
 import CategoriesTab from "./components/CategoriesTab"
 import TransactionsTab from "./components/TransactionsTab"
@@ -23,11 +24,12 @@ type TabType = 'system' | 'transactions' | 'savings' | 'accounts' | 'categories'
 function App() {
   const { t, language } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [authMode, setAuthMode] = useState<'none' | 'login' | 'register'>('none');
+  const [authMode, setAuthMode] = useState<'none' | 'login' | 'register' | 'verify-otp'>('none');
   const [activeTab, setActiveTab] = useState<TabType>('system');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userName, setUserName] = useState("");
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   
   useEffect(() => {
     const checkAuth = () => {
@@ -162,9 +164,30 @@ function App() {
 
             {authMode === 'register' && (
               <div className="w-full animate-fade-in">
-                <RegisterForm />
+                <RegisterForm 
+                  onSuccess={(email) => {
+                    setRegisteredEmail(email);
+                    setAuthMode('verify-otp');
+                  }} 
+                />
                 <button
                   onClick={() => setAuthMode('none')}
+                  className={`mt-6 transition-colors text-sm font-medium flex items-center justify-center gap-2 mx-auto text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white`}
+                >
+                  &larr; {t('common.back')}
+                </button>
+              </div>
+            )}
+
+            {authMode === 'verify-otp' && (
+              <div className="w-full animate-fade-in">
+                <VerifyOTPForm 
+                  email={registeredEmail}
+                  onSuccess={() => setAuthMode('login')}
+                  onBack={() => setAuthMode('register')}
+                />
+                <button
+                  onClick={() => setAuthMode('register')}
                   className={`mt-6 transition-colors text-sm font-medium flex items-center justify-center gap-2 mx-auto text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white`}
                 >
                   &larr; {t('common.back')}

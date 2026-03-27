@@ -42,6 +42,11 @@ class UserLogin(BaseModel):
     password: str
 
 
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+
 class UserResponse(UserBase):
     id: UUID
     created_at: datetime

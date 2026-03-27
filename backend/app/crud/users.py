@@ -14,11 +14,12 @@ def get_user_by_email(db: Session, email: str) -> models.User | None:
     return db.query(models.User).filter(models.User.email == email).first()
 
 
-def create_user(db: Session, email: str, password: str) -> models.User:
-    """Tạo user mới với mật khẩu đã được băm."""
+def create_user(db: Session, email: str, password: str, **kwargs) -> models.User:
+    """Tạo user mới với mật khẩu đã được băm và các thông tin bổ sung."""
     new_user = models.User(
         email=email,
         hashed_password=hash_password(password),
+        **kwargs
     )
     db.add(new_user)
     db.commit()

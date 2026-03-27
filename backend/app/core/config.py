@@ -97,6 +97,13 @@ class Settings:
     # --- Google AI ---
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
 
+    # --- Email (FastAPI-Mail) ---
+    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME", "")
+    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD", "")
+    MAIL_SERVER: str = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT: int = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_FROM: str = os.getenv("MAIL_FROM", MAIL_USERNAME)
+
     # --- App ---
     APP_TITLE: str = "Spending Plus API"
     PORT: int = int(os.getenv("PORT", "8000"))

@@ -50,6 +50,15 @@ export const loginUser = async (data: { email: string; password: string }) => {
   }
 };
 
+export const verifyOTP = async (data: { email: string; otp: string }) => {
+  try {
+    const response = await api.post("/api/auth/verify-otp", data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Mã OTP không chính xác.");
+  }
+};
+
 // ==========================================
 // 2. Accounts
 // ==========================================
