@@ -9,7 +9,7 @@ import CurrencyInput from "./CurrencyInput";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function SavingsTab() {
-  const { t, language, currency, formatAmount } = useLanguage();
+  const { t, formatAmount } = useLanguage();
   
   const [goals, setGoals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

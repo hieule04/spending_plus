@@ -8,7 +8,7 @@ import { useLanguage } from "../context/LanguageContext";
 interface Account { id: string; name: string; type: string; balance: number; created_at: string; }
 
 export default function AccountsTab() {
-  const { t, language, currency, formatAmount } = useLanguage();
+  const { t, formatAmount } = useLanguage();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);

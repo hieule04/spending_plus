@@ -11,7 +11,7 @@ import CurrencyInput from "./CurrencyInput";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function DebtsTab() {
-  const { t, language, currency, formatAmount } = useLanguage();
+  const { t, language, formatAmount } = useLanguage();
 
   const [debts, setDebts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

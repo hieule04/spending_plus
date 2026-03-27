@@ -15,7 +15,7 @@ interface TransactionsTabProps {
 }
 
 export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabProps) {
-  const { t, language, currency, formatAmount } = useLanguage();
+  const { t, language, formatAmount } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

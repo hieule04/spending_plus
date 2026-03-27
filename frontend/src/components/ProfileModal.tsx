@@ -5,7 +5,7 @@ import { useLanguage } from "../context/LanguageContext";
 interface ProfileModalProps { onClose: () => void; }
 
 export default function ProfileModal({ onClose }: ProfileModalProps) {
-  const { t, currency, setCurrency } = useLanguage();
+  const { t, setCurrency } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -6,7 +6,7 @@ import CurrencyInput from "./CurrencyInput";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function BudgetsTab() {
-  const { t, language, formatAmount } = useLanguage();
+  const { t, formatAmount } = useLanguage();
   
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
