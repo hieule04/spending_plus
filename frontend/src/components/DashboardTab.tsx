@@ -292,19 +292,19 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
             {activeChart === 'ratio' ? (
               <>
                 {stats.pie_data && stats.pie_data.length > 0 ? (
-                  <div className="h-80 sm:h-72 w-full animate-fade-in">
+                  <div className="h-72 sm:h-72 w-full animate-fade-in">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={110} innerRadius={70} paddingAngle={3}>
+                        <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
                           {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
                         </Pie>
                         <PieTooltip content={<CustomPieTooltip />} />
-                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} />
+                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className={`flex flex-col items-center justify-center h-80 sm:h-72 animate-fade-in ${subTextClass}`}>
+                  <div className={`flex flex-col items-center justify-center h-72 sm:h-72 animate-fade-in ${subTextClass}`}>
                     <p className="font-medium text-sm">{t('db.no_data')}</p>
                   </div>
                 )}
@@ -312,7 +312,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
             ) : (
               <>
                 {stats.line_data && stats.line_data.length > 0 ? (
-                  <div className="h-[26rem] sm:h-80 w-full relative animate-fade-in">
+                  <div className="h-72 sm:h-80 w-full relative animate-fade-in">
                     <svg style={{ height: 0 }}>
                       <defs>
                         <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
@@ -325,14 +325,14 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
                         <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
                         <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
                         <BarTooltip content={<CustomTooltip />} />
-                        <Legend wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} />
+                        <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
                         <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
                         <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className={`flex flex-col items-center justify-center h-80 sm:h-80 animate-fade-in ${subTextClass}`}>
+                  <div className={`flex flex-col items-center justify-center h-72 sm:h-80 animate-fade-in ${subTextClass}`}>
                     <p className="font-medium">{t('db.no_transactions_period')}</p>
                   </div>
                 )}
