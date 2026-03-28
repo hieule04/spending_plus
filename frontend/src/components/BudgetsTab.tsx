@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { getBudgetReport, upsertBudget, listCategories, deleteBudget } from "../service/api";
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
@@ -157,7 +158,7 @@ export default function BudgetsTab() {
         <div className={`text-center py-20 rounded-3xl flex flex-col items-center justify-center ${gridCardClass}`}>
           <p className={`text-lg font-bold mb-4 ${textTitleClass}`}>{t('bg.no_budgets')}</p>
           <button 
-            onClick={handleOpenModal}
+            onClick={() => handleOpenModal()}
             className={`px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all hover:scale-105 active:scale-95 bg-blue-600 hover:bg-blue-500 text-white shadow-lg`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -234,7 +235,7 @@ export default function BudgetsTab() {
 
           {/* Add New Budget Card (Grid Item) */}
           <button 
-            onClick={handleOpenModal}
+            onClick={() => handleOpenModal()}
             className={`bg-transparent border-dashed border-2 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-3xl flex flex-col items-center justify-center min-h-[220px] transition-all group`}
           >
             <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-all group-hover:scale-110 group-hover:rotate-90 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`}>
@@ -248,9 +249,9 @@ export default function BudgetsTab() {
         </div>
       )}
 
-      {/* Setup Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Setup Modal — rendered via portal to escape overflow-auto clipping */}
+      {isModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
           <div className={`relative w-full max-w-sm rounded-[2rem] p-8 animate-slide-up shadow-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
             <h3 className={`text-2xl font-black mb-6 ${textTitleClass}`}>
@@ -300,7 +301,8 @@ export default function BudgetsTab() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       <ConfirmModal
         isOpen={!!confirmDeleteId}

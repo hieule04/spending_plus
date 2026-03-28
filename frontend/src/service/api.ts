@@ -204,9 +204,10 @@ export const deleteTransaction = async (id: string) => {
 // 5. Thống Kê (Stats)
 // ==========================================
 
-export const getSummaryStats = async (period: string = "month") => {
+export const getSummaryStats = async (period: string = "month", date?: string) => {
   try {
-    const response = await api.get(`/api/stats/summary?period=${period}`);
+    const url = `/api/stats/summary?period=${period}${date ? `&date=${date}` : ""}`;
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể tải dữ liệu thống kê.");

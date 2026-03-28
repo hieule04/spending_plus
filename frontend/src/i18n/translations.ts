@@ -50,7 +50,7 @@ export const translations = {
     // Dashboard
     'db.title': 'Phân tích dòng tiền',
     'db.period.all': 'Tất cả',
-    'db.period.day': 'Hôm nay',
+    'db.period.day': 'Ngày',
     'db.period.week': 'Tuần này',
     'db.period.month': 'Tháng này',
     'db.period.year': 'Năm nay',

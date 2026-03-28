@@ -48,9 +48,9 @@ export default function MobileLayout({
 
   return (
     <div className="relative flex h-[100dvh] flex-col overflow-hidden overscroll-none bg-gray-50 dark:bg-slate-900">
-      <main className="flex-1 overflow-y-auto overscroll-none pb-[calc(env(safe-area-inset-bottom)+6.75rem)]">{children}</main>
+      <main className="flex-1 overflow-y-auto overscroll-none pb-[calc(env(safe-area-inset-bottom)+4.2rem)]">{children}</main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 rounded-t-3xl border-t border-gray-200 dark:border-slate-800 bg-white/95 dark:bg-slate-800/95 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 rounded-t-3xl border-t border-gray-200 dark:border-slate-800 bg-white/95 dark:bg-slate-800/95 px-3 pt-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-md items-center justify-between">
           {navItems.map(({ id, label, Icon }) => {
             const isActive = id === activeTab;
@@ -60,7 +60,7 @@ export default function MobileLayout({
                 key={id}
                 type="button"
                 onClick={() => onTabChange?.(id)}
-                className="flex min-w-0 flex-1 flex-col items-center gap-1.5 py-1 text-center"
+                className="flex min-w-0 flex-1 flex-col items-center gap-1 py-0.5 text-center"
                 aria-current={isActive ? "page" : undefined}
               >
                 <Icon
@@ -71,8 +71,8 @@ export default function MobileLayout({
                 <span
                   className={
                     isActive
-                      ? "min-h-[1.9rem] max-w-[4.8rem] text-[10px] font-bold leading-tight text-blue-600 dark:text-blue-400"
-                      : "min-h-[1.9rem] max-w-[4.8rem] text-[10px] font-medium leading-tight text-gray-400 dark:text-slate-500"
+                      ? "max-w-[4.8rem] text-[10px] font-bold leading-tight text-blue-600 dark:text-blue-400"
+                      : "max-w-[4.8rem] text-[10px] font-medium leading-tight text-gray-400 dark:text-slate-500"
                   }
                 >
                   {label}

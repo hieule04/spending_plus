@@ -4,7 +4,7 @@ import MobilePageHeader from "./MobilePageHeader";
 import { getSummaryStats } from "../service/api";
 import { 
   PieChart, Pie, Cell, Tooltip as PieTooltip, Legend, 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip, ResponsiveContainer,
   AreaChart, Area
 } from "recharts";
 import { useLanguage } from "../context/LanguageContext";
@@ -24,6 +24,8 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<string>("month");
+  const [refDate, setRefDate] = useState<Date>(new Date());
+  const [activeChart, setActiveChart] = useState<"ratio" | "trend">("ratio");
 
   const periodOptions = [
     { value: 'all', label: t('db.period.all') },
@@ -33,10 +35,12 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
     { value: 'year', label: language === 'vi' ? 'Năm' : t('db.period.year') },
   ];
 
-  const fetchStats = async (selectedPeriod: string) => {
+  const fetchStats = async (selectedPeriod: string, dateObj: Date) => {
     try { 
       setLoading(true); 
-      const data = await getSummaryStats(selectedPeriod); 
+      // Send date in ISO format (YYYY-MM-DD or full ISO)
+      const dateStr = dateObj.toISOString();
+      const data = await getSummaryStats(selectedPeriod, dateStr); 
       if (data) { 
         setStats(data); 
         setError(null); 
@@ -49,11 +53,11 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
   };
 
   useEffect(() => {
-    fetchStats(period);
-    const handleRefresh = () => fetchStats(period);
+    fetchStats(period, refDate);
+    const handleRefresh = () => fetchStats(period, refDate);
     window.addEventListener("refresh_transactions", handleRefresh);
     return () => window.removeEventListener("refresh_transactions", handleRefresh);
-  }, [period]);
+  }, [period, refDate]);
 
   // const formatCurrency = (value: number) => new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US', { 
   //   style: 'currency', 
@@ -75,6 +79,44 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
       );
     }
     return null;
+  };
+
+  const handlePrev = () => {
+    const newDate = new Date(refDate);
+    if (period === "day") newDate.setDate(newDate.getDate() - 1);
+    else if (period === "week") newDate.setDate(newDate.getDate() - 7);
+    else if (period === "month") newDate.setMonth(newDate.getMonth() - 1);
+    else if (period === "year") newDate.setFullYear(newDate.getFullYear() - 1);
+    setRefDate(newDate);
+  };
+
+  const handleNext = () => {
+    const newDate = new Date(refDate);
+    if (period === "day") newDate.setDate(newDate.getDate() + 1);
+    else if (period === "week") newDate.setDate(newDate.getDate() + 7);
+    else if (period === "month") newDate.setMonth(newDate.getMonth() + 1);
+    else if (period === "year") newDate.setFullYear(newDate.getFullYear() + 1);
+    setRefDate(newDate);
+  };
+
+  const formatCurrentPeriod = () => {
+    if (period === "day") {
+      return `${t('db.period.day')} ${refDate.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+    }
+    if (period === "week") {
+      // Simple week calculation
+      const firstDayOfYear = new Date(refDate.getFullYear(), 0, 1);
+      const pastDaysOfYear = (refDate.getTime() - firstDayOfYear.getTime()) / 86400000;
+      const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+      return `${language === 'vi' ? 'Tuần' : 'Week'} ${weekNum}, ${refDate.getFullYear()}`;
+    }
+    if (period === "month") {
+      return `${language === 'vi' ? 'Tháng' : 'Month'} ${refDate.getMonth() + 1}, ${refDate.getFullYear()}`;
+    }
+    if (period === "year") {
+      return `${t('db.period.year')} ${refDate.getFullYear()}`;
+    }
+    return t('db.period.all');
   };
 
   const CustomPieTooltip = ({ active, payload }: any) => {
@@ -99,8 +141,8 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
   const axisColor = '#475569'; 
 
   return (
-    <div className="space-y-6 animate-fade-in mb-6">
-      <div className="md:hidden pt-[env(safe-area-inset-top)]">
+    <div className="flex flex-col h-full overflow-hidden animate-fade-in space-y-4 sm:space-y-6">
+      <div className="flex-none md:hidden pt-[env(safe-area-inset-top)]">
         <MobilePageHeader
           onOpenMobileMenu={onOpenMobileMenu}
           rightSlot={
@@ -137,6 +179,33 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
         </div>
       </div>
 
+      {/* Mobile Date Navigator */}
+      {period !== 'all' && (
+        <div className="md:hidden flex items-center justify-between px-2">
+          <button 
+            onClick={handlePrev} 
+            className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+          
+          <div className="flex flex-col items-center">
+            <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+              {formatCurrentPeriod()}
+            </span>
+            {/* Display "Hôm nay" button if far from now? Optional */}
+          </div>
+
+          <button 
+            onClick={handleNext} 
+            className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 sm:space-y-6 pb-2">
       {loading && !stats ? (
         <div className={`flex justify-center items-center h-48 p-6 rounded-2xl ${cardClass}`}>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -146,97 +215,133 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
       ) : stats ? (
         <>
           {/* 3 KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-blue-500/30 shadow-blue-500/5`}>
-              <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20`}></div>
-              <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.balance')}</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+            <div className={`col-span-2 sm:col-span-1 py-5 px-6 sm:p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-blue-500/30 shadow-blue-500/5`}>
+              <div className={`absolute -right-6 -top-6 w-24 h-24 sm:w-32 sm:h-32 rounded-full blur-2xl transition-all bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20`}></div>
+              <h3 className={`text-sm font-bold mb-1 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.balance')}</h3>
               <p className={`text-3xl font-extrabold ${headingClass}`}>{formatAmount(stats.balance)}</p>
             </div>
-            <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-emerald-500/30 shadow-emerald-500/5`}>
-              <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20`}></div>
-              <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.income')}</h3>
-              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">+{formatAmount(stats.total_income)}</p>
+            <div className={`col-span-1 py-5 px-5 sm:p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-emerald-500/30 shadow-emerald-500/5`}>
+              <div className={`absolute -right-6 -top-6 w-24 h-24 sm:w-32 sm:h-32 rounded-full blur-2xl transition-all bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20`}></div>
+              <h3 className={`text-[11px] sm:text-sm font-bold mb-1 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.income')}</h3>
+              <p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">+{formatAmount(stats.total_income)}</p>
             </div>
-            <div className={`p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-rose-500/30 shadow-rose-500/5`}>
-              <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-2xl transition-all bg-rose-50 dark:bg-rose-500/10 group-hover:bg-rose-100 dark:group-hover:bg-rose-500/20`}></div>
-              <h3 className={`text-sm font-bold mb-2 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.expense')}</h3>
-              <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">-{formatAmount(stats.total_expense)}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className={`p-6 sm:p-8 rounded-3xl shadow-sm ${cardClass}`}>
-              <h3 className={`text-lg font-bold mb-6 ${headingClass}`}>{t('db.chart.ratio')}</h3>
-              {stats.pie_data && stats.pie_data.length > 0 ? (
-                <div className="h-72 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
-                        {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
-                      </Pie>
-                      <PieTooltip content={<CustomPieTooltip />} />
-                      <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ paddingLeft: '10px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className={`flex flex-col items-center justify-center h-48 ${subTextClass}`}>
-                  <p className="font-medium text-sm">{t('db.no_data')}</p>
-                </div>
-              )}
-            </div>
-
-            <div className={`p-6 sm:p-8 rounded-3xl shadow-sm ${cardClass}`}>
-              <h3 className={`text-lg font-bold mb-6 ${headingClass}`}>{t('db.chart.compare')}</h3>
-              {stats.column_data && (stats.column_data[0].income > 0 || stats.column_data[0].expense > 0) ? (
-                <div className="h-72 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats.column_data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
-                      <XAxis dataKey="name" stroke={axisColor} tick={{fill: axisColor, fontWeight: 600}} axisLine={false} tickLine={false} />
-                      <BarTooltip content={<CustomTooltip />} cursor={{fill: 'rgba(51, 65, 85, 0.1)'}} />
-                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                      <Bar dataKey="income" name={t('db.chart.income')} fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={80} />
-                      <Bar dataKey="expense" name={t('db.chart.expense')} fill="#f43f5e" radius={[6, 6, 0, 0]} maxBarSize={80} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className={`flex flex-col items-center justify-center h-48 ${subTextClass}`}><p className="font-medium text-sm">{t('db.no_data')}</p></div>
-              )}
+            <div className={`col-span-1 py-5 px-5 sm:p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-rose-500/30 shadow-rose-500/5`}>
+              <div className={`absolute -right-6 -top-6 w-24 h-24 sm:w-32 sm:h-32 rounded-full blur-2xl transition-all bg-rose-50 dark:bg-rose-500/10 group-hover:bg-rose-100 dark:group-hover:bg-rose-500/20`}></div>
+              <h3 className={`text-[11px] sm:text-sm font-bold mb-1 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.expense')}</h3>
+              <p className="text-xl sm:text-2xl font-bold text-rose-600 dark:text-rose-400">-{formatAmount(stats.total_expense)}</p>
             </div>
           </div>
 
-          <div className={`p-6 sm:p-8 rounded-3xl shadow-sm mt-6 ${cardClass}`}>
-            <h3 className={`text-lg font-bold mb-6 ${headingClass}`}>{t('db.chart.trend')}</h3>
-            {stats.line_data && stats.line_data.length > 0 ? (
-              <div className="h-80 w-full relative">
-                <svg style={{ height: 0 }}>
-                  <defs>
-                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
-                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
-                  </defs>
-                </svg>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={stats.line_data} margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
-                    <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 12}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
-                    <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 12}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} />
-                    <BarTooltip content={<CustomTooltip />} />
-                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                    <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
-                    <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+          {/* Chart Section Toggle Bar - Moved outside */}
+          <div className="md:hidden flex p-1 rounded-xl bg-slate-100 dark:bg-slate-900/50 w-full">
+            <button
+              onClick={() => setActiveChart("ratio")}
+              className={`flex-1 px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                activeChart === 'ratio'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {t('db.chart.ratio')}
+            </button>
+            <button
+              onClick={() => setActiveChart("trend")}
+              className={`flex-1 px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                activeChart === 'trend'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {t('db.chart.trend')}
+            </button>
+          </div>
+
+          {/* Chart Section Content Panel */}
+          <div className={`p-4 sm:p-8 rounded-3xl shadow-sm ${cardClass}`}>
+            <div className="hidden sm:flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+              <h3 className={`text-lg font-bold ${headingClass}`}>
+                {activeChart === 'ratio' ? t('db.chart.ratio') : t('db.chart.trend')}
+              </h3>
+              
+              {/* Desktop Chart Toggle Picker */}
+              <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-900/50 w-full sm:w-auto">
+                <button
+                  onClick={() => setActiveChart("ratio")}
+                  className={`flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    activeChart === "ratio"
+                      ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {t("db.chart.ratio")}
+                </button>
+                <button
+                  onClick={() => setActiveChart("trend")}
+                  className={`flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    activeChart === "trend"
+                      ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {t("db.chart.trend")}
+                </button>
               </div>
+            </div>
+
+            {activeChart === 'ratio' ? (
+              <>
+                {stats.pie_data && stats.pie_data.length > 0 ? (
+                  <div className="h-80 sm:h-72 w-full animate-fade-in">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={110} innerRadius={70} paddingAngle={3}>
+                          {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
+                        </Pie>
+                        <PieTooltip content={<CustomPieTooltip />} />
+                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className={`flex flex-col items-center justify-center h-80 sm:h-72 animate-fade-in ${subTextClass}`}>
+                    <p className="font-medium text-sm">{t('db.no_data')}</p>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className={`flex flex-col items-center justify-center h-64 ${subTextClass}`}>
-                <p className="font-medium">{t('db.no_transactions_period')}</p>
-              </div>
+              <>
+                {stats.line_data && stats.line_data.length > 0 ? (
+                  <div className="h-[26rem] sm:h-80 w-full relative animate-fade-in">
+                    <svg style={{ height: 0 }}>
+                      <defs>
+                        <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                        <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
+                      </defs>
+                    </svg>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
+                        <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
+                        <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
+                        <BarTooltip content={<CustomTooltip />} />
+                        <Legend wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} />
+                        <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
+                        <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className={`flex flex-col items-center justify-center h-80 sm:h-80 animate-fade-in ${subTextClass}`}>
+                    <p className="font-medium">{t('db.no_transactions_period')}</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </>
       ) : null}
+      </div>
     </div>
   );
 }
