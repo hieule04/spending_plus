@@ -47,10 +47,13 @@ export default function MobileLayout({
   ];
 
   return (
-    <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden overscroll-none bg-gray-50 dark:bg-slate-900 pt-[env(safe-area-inset-top)]">
-      <main className="flex-1 overflow-y-auto hide-scrollbar overscroll-none pb-[calc(env(safe-area-inset-bottom)+4rem)]">{children}</main>
+    <div className="flex h-full w-full flex-col overflow-hidden bg-gray-50 dark:bg-slate-900 pt-[env(safe-area-inset-top)]">
+      <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-[calc(env(safe-area-inset-bottom)+4.2rem)]">{children}</main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 pt-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.08)]">
+      {/* Bottom safe-area fill — solid color behind the rounded nav to prevent any gap */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 h-[env(safe-area-inset-bottom)] bg-white dark:bg-slate-800" aria-hidden="true" />
+
+      <nav className="fixed bottom-0 left-0 right-0 z-40 rounded-t-3xl border-t border-gray-200 dark:border-slate-800 bg-white/95 dark:bg-slate-800/95 px-3 pt-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-md items-center justify-between">
           {navItems.map(({ id, label, Icon }) => {
             const isActive = id === activeTab;

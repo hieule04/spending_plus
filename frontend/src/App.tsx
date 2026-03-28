@@ -205,15 +205,12 @@ function App() {
   }
 
   return (
-    <div className={`h-[100dvh] overscroll-none flex flex-col items-center font-sans transition-colors duration-300 ease-in-out overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
+    <div className={`h-[100dvh] overflow-hidden flex flex-col items-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
       <div className="w-full max-w-[1600px] h-full flex flex-col md:flex-row relative md:gap-4 md:p-6 lg:p-8">
 
-        {/* Mobile Top Header */}
-        <div className="md:hidden flex flex-col h-full w-full">
-          {!['system', 'transactions', 'chat', 'profile'].includes(activeTab) && (
-            <MobilePageHeader onOpenMobileMenu={() => setMobileMenuOpen(true)} />
-          )}
-
+        {/* Mobile View Container */}
+        <div className="md:hidden fixed inset-0 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900">
+          
           {/* Mobile Drawer */}
           {mobileMenuOpen && (
             <div className="fixed inset-0 z-[60] flex">
@@ -277,7 +274,7 @@ function App() {
           )}
 
           <MobileLayout activeTab={activeTab} onTabChange={setActiveTab}>
-            <div className={`animate-fade-in h-full ${['chat', 'system'].includes(activeTab) ? '' : 'p-4'}`}>
+            <div className="animate-fade-in h-full pt-1">
               {activeTab === 'system' && <DashboardTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
               {activeTab === 'transactions' && <TransactionsTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
               {activeTab === 'savings' && <SavingsTab />}
