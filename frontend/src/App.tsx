@@ -206,7 +206,7 @@ function App() {
 
   return (
     <div className={`h-[100dvh] overscroll-none flex flex-col items-center font-sans transition-colors duration-300 ease-in-out overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
-      <div className="w-full max-w-[1600px] h-full flex flex-col md:flex-row relative gap-4 p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-[1600px] h-full flex flex-col md:flex-row relative md:gap-4 md:p-6 lg:p-8">
 
         {/* Mobile Top Header */}
         <div className="md:hidden flex flex-col h-full w-full">
@@ -277,7 +277,7 @@ function App() {
           )}
 
           <MobileLayout activeTab={activeTab} onTabChange={setActiveTab}>
-            <div className={`animate-fade-in ${activeTab === 'chat' || activeTab === 'system' ? 'h-[calc(100dvh-6.6rem)] px-2 pt-2' : 'p-4'}`}>
+            <div className={`animate-fade-in h-full ${['chat', 'system'].includes(activeTab) ? '' : 'p-4'}`}>
               {activeTab === 'system' && <DashboardTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
               {activeTab === 'transactions' && <TransactionsTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
               {activeTab === 'savings' && <SavingsTab />}
