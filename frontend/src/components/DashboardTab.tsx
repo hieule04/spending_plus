@@ -142,7 +142,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden animate-fade-in space-y-4 sm:space-y-6">
-      <div className="flex-none md:hidden pt-[env(safe-area-inset-top)]">
+      <div className="flex-none md:hidden">
         <MobilePageHeader
           onOpenMobileMenu={onOpenMobileMenu}
           rightSlot={
