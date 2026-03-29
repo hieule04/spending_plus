@@ -47,6 +47,7 @@ export default function DebtsTab() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeSection, setActiveSection] = useState<"debts" | "loans">("debts");
 
   const [editingDebt, setEditingDebt] = useState<DebtItem | null>(null);
   const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
@@ -75,10 +76,25 @@ export default function DebtsTab() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [debtData, accountData, loanData] = await Promise.all([listDebts(), listAccounts(), listLoans()]);
-      setDebts(debtData || []);
-      setAccounts(accountData || []);
-      setLoans(loanData || []);
+      const [debtResult, accountResult, loanResult] = await Promise.allSettled([
+        listDebts(),
+        listAccounts(),
+        listLoans(),
+      ]);
+
+      if (debtResult.status === "fulfilled") {
+        setDebts(debtResult.value || []);
+      } else {
+        throw debtResult.reason;
+      }
+
+      if (accountResult.status === "fulfilled") {
+        setAccounts(accountResult.value || []);
+      } else {
+        throw accountResult.reason;
+      }
+
+      setLoans(loanResult.status === "fulfilled" ? loanResult.value || [] : []);
     } catch (err: any) {
       setMessage({ text: err.message || t("debt.msg.load_error"), type: "error" });
     } finally {
@@ -246,6 +262,8 @@ export default function DebtsTab() {
   const card = "rounded-3xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-800";
   const title = "text-slate-900 dark:text-white";
   const sub = "text-slate-500 dark:text-slate-400";
+  const primaryButton = "rounded-2xl bg-blue-600 px-4 py-2 text-sm font-bold text-white";
+  const primaryButtonWide = "rounded-2xl bg-blue-600 px-6 py-3 font-bold text-white";
 
   return (
     <div className="w-full p-2">
@@ -254,25 +272,52 @@ export default function DebtsTab() {
         <p className={`mt-2 ${sub}`}>{t("debt.subtitle")}</p>
       </div>
 
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="inline-flex rounded-2xl bg-slate-100 p-1 dark:bg-slate-900/60">
+          <button
+            type="button"
+            onClick={() => setActiveSection("debts")}
+            className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+              activeSection === "debts"
+                ? "bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            {t("debt.title")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection("loans")}
+            className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+              activeSection === "loans"
+                ? "bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            {t("loan.title")}
+          </button>
+        </div>
+
+        <button
+          onClick={() => (activeSection === "debts" ? openDebtModal() : openLoanModal())}
+          className={primaryButton}
+        >
+          {activeSection === "debts" ? t("debt.add") : t("loan.add")}
+        </button>
+      </div>
+
       {message && <div className={`mb-6 rounded-2xl border p-4 text-sm font-bold ${message.type === "success" ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-400" : "border-rose-500/30 bg-rose-500/20 text-rose-400"}`}>{message.text}</div>}
 
       {loading ? (
         <div className={`py-20 text-center font-bold ${sub}`}>{t("common.loading")}</div>
       ) : (
         <div className="space-y-10 pb-24">
+          {activeSection === "debts" && (
           <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className={`text-2xl font-black ${title}`}>{t("debt.title")}</h3>
-                <p className={`mt-1 text-sm ${sub}`}>{t("debt.subtitle")}</p>
-              </div>
-              <button onClick={() => openDebtModal()} className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-bold text-white">{t("debt.add")}</button>
-            </div>
-
             {debts.length === 0 ? (
               <div className={`${card} flex flex-col items-center justify-center py-20 text-center`}>
                 <p className={`mb-4 text-lg font-bold ${title}`}>{t("debt.no_debts")}</p>
-                <button onClick={() => openDebtModal()} className="rounded-2xl bg-blue-600 px-6 py-3 font-bold text-white">{t("debt.start")}</button>
+                <button onClick={() => openDebtModal()} className={primaryButtonWide}>{t("debt.start")}</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -310,27 +355,21 @@ export default function DebtsTab() {
                         <span>{t("debt.next_due")}: {getNextDueDate(debt.due_date)}</span>
                         <span>{t("debt.monthly")}: {formatAmount(debt.monthly_payment)}</span>
                       </div>
-                      {!done && <button onClick={() => openPayModal(debt)} className="w-full rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-sm font-bold text-emerald-600 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">{t("debt.pay_btn")}</button>}
+                      {!done && <button onClick={() => openPayModal(debt)} className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white">{t("debt.pay_btn")}</button>}
                     </div>
                   );
                 })}
               </div>
             )}
           </section>
+          )}
 
+          {activeSection === "loans" && (
           <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className={`text-2xl font-black ${title}`}>{t("loan.title")}</h3>
-                <p className={`mt-1 text-sm ${sub}`}>{t("loan.subtitle")}</p>
-              </div>
-              <button onClick={() => openLoanModal()} className="rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-bold text-white">{t("loan.add")}</button>
-            </div>
-
             {loans.length === 0 ? (
               <div className={`${card} flex flex-col items-center justify-center py-20 text-center`}>
                 <p className={`mb-4 text-lg font-bold ${title}`}>{t("loan.no_loans")}</p>
-                <button onClick={() => openLoanModal()} className="rounded-2xl bg-cyan-600 px-6 py-3 font-bold text-white">{t("loan.start")}</button>
+                <button onClick={() => openLoanModal()} className={primaryButtonWide}>{t("loan.start")}</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -355,6 +394,7 @@ export default function DebtsTab() {
               </div>
             )}
           </section>
+          )}
         </div>
       )}
 
@@ -405,7 +445,7 @@ export default function DebtsTab() {
               </div>
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setIsLoanModalOpen(false)} className="flex-1 rounded-xl bg-slate-100 px-4 py-3 font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300">{t("common.cancel")}</button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 rounded-xl bg-cyan-600 px-4 py-3 font-bold text-white">{isSubmitting ? t("common.saving") : t("common.save")}</button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 rounded-xl bg-blue-600 px-4 py-3 font-bold text-white">{isSubmitting ? t("common.saving") : t("common.save")}</button>
               </div>
             </form>
           </div>
@@ -436,7 +476,7 @@ export default function DebtsTab() {
               </div>
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setIsPayModalOpen(false)} className="flex-1 rounded-xl bg-slate-100 px-4 py-3 font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300">{t("common.cancel")}</button>
-                <button type="submit" disabled={isSubmitting || accounts.length === 0} className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? t("common.saving") : t("common.confirm")}</button>
+                <button type="submit" disabled={isSubmitting || accounts.length === 0} className="flex-1 rounded-xl bg-blue-600 px-4 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? t("common.saving") : t("common.confirm")}</button>
               </div>
             </form>
           </div>

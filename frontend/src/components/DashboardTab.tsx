@@ -205,7 +205,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 sm:space-y-6 pb-2">
+      <div className="flex-1 overflow-y-auto md:overflow-hidden hide-scrollbar space-y-4 sm:space-y-6 md:space-y-4 pb-2">
       {loading && !stats ? (
         <div className={`flex justify-center items-center h-48 p-6 rounded-2xl ${cardClass}`}>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -213,86 +213,60 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
       ) : error ? (
         <div className="text-red-500 bg-red-50 dark:bg-red-900/10 p-6 rounded-2xl border border-red-200 dark:border-red-900/30 text-center font-medium">⚠️ {error}</div>
       ) : stats ? (
-        <>
+        <div className="space-y-4 sm:space-y-6 md:flex md:h-full md:min-h-0 md:flex-col md:space-y-4">
           {/* 3 KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
-            <div className={`col-span-2 sm:col-span-1 py-5 px-6 sm:p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-blue-500/30 shadow-blue-500/5`}>
-              <div className={`absolute -right-6 -top-6 w-24 h-24 sm:w-32 sm:h-32 rounded-full blur-2xl transition-all bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20`}></div>
-              <h3 className={`text-sm font-bold mb-1 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.balance')}</h3>
-              <p className={`text-3xl font-extrabold ${headingClass}`}>{formatAmount(stats.balance)}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 md:gap-4 md:flex-none">
+            <div className={`col-span-2 sm:col-span-1 py-5 px-6 sm:p-6 md:px-6 md:py-5 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-blue-500/30 shadow-blue-500/5`}>
+              <div className={`absolute -right-6 -top-6 w-24 h-24 sm:w-32 sm:h-32 md:w-28 md:h-28 rounded-full blur-2xl transition-all bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20`}></div>
+              <h3 className={`text-sm md:text-sm font-bold mb-1 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.balance')}</h3>
+              <p className={`text-3xl md:text-[1.7rem] font-extrabold leading-tight ${headingClass}`}>{formatAmount(stats.balance)}</p>
             </div>
-            <div className={`col-span-1 py-5 px-5 sm:p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-emerald-500/30 shadow-emerald-500/5`}>
-              <div className={`absolute -right-6 -top-6 w-24 h-24 sm:w-32 sm:h-32 rounded-full blur-2xl transition-all bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20`}></div>
-              <h3 className={`text-[11px] sm:text-sm font-bold mb-1 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.income')}</h3>
-              <p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">+{formatAmount(stats.total_income)}</p>
+            <div className={`col-span-1 py-5 px-5 sm:p-6 md:px-5 md:py-5 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-emerald-500/30 shadow-emerald-500/5`}>
+              <div className={`absolute -right-6 -top-6 w-24 h-24 sm:w-32 sm:h-32 md:w-28 md:h-28 rounded-full blur-2xl transition-all bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20`}></div>
+              <h3 className={`text-[11px] sm:text-sm md:text-sm font-bold mb-1 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.income')}</h3>
+              <p className="text-xl sm:text-2xl md:text-[1.35rem] font-bold leading-tight text-emerald-600 dark:text-emerald-400">+{formatAmount(stats.total_income)}</p>
             </div>
-            <div className={`col-span-1 py-5 px-5 sm:p-6 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-rose-500/30 shadow-rose-500/5`}>
-              <div className={`absolute -right-6 -top-6 w-24 h-24 sm:w-32 sm:h-32 rounded-full blur-2xl transition-all bg-rose-50 dark:bg-rose-500/10 group-hover:bg-rose-100 dark:group-hover:bg-rose-500/20`}></div>
-              <h3 className={`text-[11px] sm:text-sm font-bold mb-1 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.expense')}</h3>
-              <p className="text-xl sm:text-2xl font-bold text-rose-600 dark:text-rose-400">-{formatAmount(stats.total_expense)}</p>
+            <div className={`col-span-1 py-5 px-5 sm:p-6 md:px-5 md:py-5 rounded-2xl shadow-sm relative overflow-hidden group bg-white dark:bg-slate-800 border border-slate-200 dark:border-rose-500/30 shadow-rose-500/5`}>
+              <div className={`absolute -right-6 -top-6 w-24 h-24 sm:w-32 sm:h-32 md:w-28 md:h-28 rounded-full blur-2xl transition-all bg-rose-50 dark:bg-rose-500/10 group-hover:bg-rose-100 dark:group-hover:bg-rose-500/20`}></div>
+              <h3 className={`text-[11px] sm:text-sm md:text-sm font-bold mb-1 uppercase tracking-wide ${subTextClass}`}>{t('db.kpi.expense')}</h3>
+              <p className="text-xl sm:text-2xl md:text-[1.35rem] font-bold leading-tight text-rose-600 dark:text-rose-400">-{formatAmount(stats.total_expense)}</p>
             </div>
           </div>
 
-          {/* Chart Section Toggle Bar - Moved outside */}
           <div className="md:hidden flex p-1 rounded-xl bg-slate-100 dark:bg-slate-900/50 w-full">
             <button
               onClick={() => setActiveChart("ratio")}
               className={`flex-1 px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                activeChart === 'ratio'
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400'
+                activeChart === "ratio"
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400"
               }`}
             >
-              {t('db.chart.ratio')}
+              {t("db.chart.ratio")}
             </button>
             <button
               onClick={() => setActiveChart("trend")}
               className={`flex-1 px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                activeChart === 'trend'
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400'
+                activeChart === "trend"
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400"
               }`}
             >
-              {t('db.chart.trend')}
+              {t("db.chart.trend")}
             </button>
           </div>
 
-          {/* Chart Section Content Panel */}
-          <div className={`p-4 sm:p-8 rounded-3xl shadow-sm ${cardClass}`}>
-            <div className="hidden sm:flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+          <div className={`md:hidden p-4 rounded-3xl shadow-sm ${cardClass}`}>
+            <div className="mb-6 flex items-center justify-between gap-4">
               <h3 className={`text-lg font-bold ${headingClass}`}>
-                {activeChart === 'ratio' ? t('db.chart.ratio') : t('db.chart.trend')}
+                {activeChart === "ratio" ? t("db.chart.ratio") : t("db.chart.trend")}
               </h3>
-              
-              {/* Desktop Chart Toggle Picker */}
-              <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-900/50 w-full sm:w-auto">
-                <button
-                  onClick={() => setActiveChart("ratio")}
-                  className={`flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    activeChart === "ratio"
-                      ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-slate-500 dark:text-slate-400"
-                  }`}
-                >
-                  {t("db.chart.ratio")}
-                </button>
-                <button
-                  onClick={() => setActiveChart("trend")}
-                  className={`flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    activeChart === "trend"
-                      ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-slate-500 dark:text-slate-400"
-                  }`}
-                >
-                  {t("db.chart.trend")}
-                </button>
-              </div>
             </div>
 
-            {activeChart === 'ratio' ? (
+            {activeChart === "ratio" ? (
               <>
                 {stats.pie_data && stats.pie_data.length > 0 ? (
-                  <div className="h-72 sm:h-72 w-full animate-fade-in">
+                  <div className="h-72 w-full animate-fade-in">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
@@ -304,7 +278,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className={`flex flex-col items-center justify-center h-72 sm:h-72 animate-fade-in ${subTextClass}`}>
+                  <div className={`flex flex-col items-center justify-center h-72 animate-fade-in ${subTextClass}`}>
                     <p className="font-medium text-sm">{t('db.no_data')}</p>
                   </div>
                 )}
@@ -312,11 +286,11 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
             ) : (
               <>
                 {stats.line_data && stats.line_data.length > 0 ? (
-                  <div className="h-72 sm:h-80 w-full relative animate-fade-in">
+                  <div className="h-72 w-full relative animate-fade-in">
                     <svg style={{ height: 0 }}>
                       <defs>
-                        <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
-                        <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
+                        <linearGradient id="colorIncomeMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                        <linearGradient id="colorExpenseMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
                       </defs>
                     </svg>
                     <ResponsiveContainer width="100%" height="100%">
@@ -326,20 +300,78 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
                         <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
                         <BarTooltip content={<CustomTooltip />} />
                         <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                        <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
-                        <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
+                        <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncomeMobile)" />
+                        <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpenseMobile)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className={`flex flex-col items-center justify-center h-72 sm:h-80 animate-fade-in ${subTextClass}`}>
+                  <div className={`flex flex-col items-center justify-center h-72 animate-fade-in ${subTextClass}`}>
                     <p className="font-medium">{t('db.no_transactions_period')}</p>
                   </div>
                 )}
               </>
             )}
           </div>
-        </>
+
+          <div className="hidden md:grid md:min-h-0 md:flex-1 grid-cols-1 gap-4 xl:grid-cols-2">
+            <div className={`p-4 sm:p-8 md:p-6 rounded-3xl shadow-sm ${cardClass} md:flex md:min-h-0 md:flex-col`}>
+              <div className="mb-5 flex items-center justify-between gap-4 md:flex-none">
+                <h3 className={`text-lg md:text-base font-bold ${headingClass}`}>{t("db.chart.ratio")}</h3>
+              </div>
+
+              {stats.pie_data && stats.pie_data.length > 0 ? (
+                <div className="h-64 xl:h-72 w-full animate-fade-in md:h-full md:min-h-0 md:flex-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
+                        {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
+                      </Pie>
+                      <PieTooltip content={<CustomPieTooltip />} />
+                      <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className={`flex flex-col items-center justify-center h-64 xl:h-72 animate-fade-in ${subTextClass} md:h-full md:min-h-0 md:flex-1`}>
+                  <p className="font-medium text-sm">{t('db.no_data')}</p>
+                </div>
+              )}
+            </div>
+
+            <div className={`p-4 sm:p-8 md:p-6 rounded-3xl shadow-sm ${cardClass} md:flex md:min-h-0 md:flex-col`}>
+              <div className="mb-5 flex items-center justify-between gap-4 md:flex-none">
+                <h3 className={`text-lg md:text-base font-bold ${headingClass}`}>{t("db.chart.trend")}</h3>
+              </div>
+
+              {stats.line_data && stats.line_data.length > 0 ? (
+                <div className="h-64 xl:h-72 w-full relative animate-fade-in md:h-full md:min-h-0 md:flex-1">
+                  <svg style={{ height: 0 }}>
+                    <defs>
+                      <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                      <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
+                    </defs>
+                  </svg>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
+                      <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
+                      <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
+                      <BarTooltip content={<CustomTooltip />} />
+                      <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                      <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
+                      <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className={`flex flex-col items-center justify-center h-64 xl:h-72 animate-fade-in ${subTextClass} md:h-full md:min-h-0 md:flex-1`}>
+                  <p className="font-medium">{t('db.no_transactions_period')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       ) : null}
       </div>
     </div>

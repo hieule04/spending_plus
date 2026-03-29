@@ -212,10 +212,10 @@ function App() {
           
           {/* Mobile Drawer */}
           {mobileMenuOpen && (
-            <div className="fixed inset-0 z-[60] flex">
-              <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setMobileMenuOpen(false)} />
-              <div className="relative flex h-full w-[19rem] max-w-[86vw] flex-col overflow-y-auto rounded-r-[2rem] border-r border-slate-200/50 dark:border-slate-700/60 bg-white/95 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.97),rgba(15,23,42,0.92))] shadow-[0_30px_80px_rgba(15,23,42,0.1)] dark:shadow-[0_30px_80px_rgba(15,23,42,0.35)] backdrop-blur-xl animate-slide-in-left">
-                <div className="relative overflow-hidden border-b border-slate-100 dark:border-slate-700/70 px-5 pb-5 pt-6">
+            <div className="mobile-drawer-layer fixed inset-0 z-[60] flex">
+              <div className="mobile-drawer-backdrop fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setMobileMenuOpen(false)} />
+              <div className="mobile-drawer-panel relative flex w-[19rem] max-w-[86vw] flex-col overflow-hidden rounded-r-[2rem] border-r border-slate-200/50 dark:border-slate-700/60 bg-white/95 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.97),rgba(15,23,42,0.92))] shadow-[0_30px_80px_rgba(15,23,42,0.1)] dark:shadow-[0_30px_80px_rgba(15,23,42,0.35)] backdrop-blur-xl animate-slide-in-left">
+                <div className="relative overflow-hidden border-b border-slate-100 dark:border-slate-700/70 px-5 pb-5 pt-4">
                   <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.1),_transparent_62%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_48%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.28),_transparent_62%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.22),_transparent_48%)]" />
                   <div className="relative flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
@@ -242,7 +242,7 @@ function App() {
                     </button>
                   </div>
                 </div>
-                <nav className="flex-1 px-5 py-5">
+                <nav className="flex-1 overflow-y-auto px-5 py-5">
                   {mobileDrawerTabs.map((tab, index) => (
                     <div key={tab.id}>
                       <button
