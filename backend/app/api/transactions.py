@@ -49,6 +49,9 @@ def create(
 
     except HTTPException:
         raise
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Lỗi tạo giao dịch: {str(e)}")
@@ -117,6 +120,9 @@ def update(
 
     except HTTPException:
         raise
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Lỗi cập nhật giao dịch: {str(e)}")

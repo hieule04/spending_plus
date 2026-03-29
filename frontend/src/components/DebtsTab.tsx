@@ -34,6 +34,11 @@ export default function DebtsTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  const showTimedMessage = (text: string, type: "success" | "error", timeout = 3000) => {
+    setMessage({ text, type });
+    window.setTimeout(() => setMessage(null), timeout);
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -105,24 +110,44 @@ export default function DebtsTab() {
 
   const handleSaveDebt = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!creditorName || !totalAmount || !monthlyPayment) return;
+    const normalizedCreditorName = creditorName.trim();
+    const parsedTotalAmount = Number(totalAmount);
+    const parsedMonthlyPayment = Number(monthlyPayment);
+    const parsedDueDate = parseInt(dueDate, 10);
+
+    if (!normalizedCreditorName || !totalAmount || !monthlyPayment) {
+      showTimedMessage(t('debt.msg.error'), "error");
+      return;
+    }
+
+    if (
+      !Number.isFinite(parsedTotalAmount) ||
+      !Number.isFinite(parsedMonthlyPayment) ||
+      parsedTotalAmount <= 0 ||
+      parsedMonthlyPayment <= 0 ||
+      !Number.isInteger(parsedDueDate)
+    ) {
+      showTimedMessage(t('debt.msg.error'), "error");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       if (editingDebt) {
         await updateDebt(editingDebt.id, {
-          creditor_name: creditorName,
-          total_amount: parseFloat(totalAmount),
-          monthly_payment: parseFloat(monthlyPayment),
-          due_date: parseInt(dueDate),
+          creditor_name: normalizedCreditorName,
+          total_amount: parsedTotalAmount,
+          monthly_payment: parsedMonthlyPayment,
+          due_date: parsedDueDate,
         });
         setMessage({ text: t('debt.msg.update_success'), type: "success" });
       } else {
         await createDebt({
-          creditor_name: creditorName,
-          total_amount: parseFloat(totalAmount),
-          monthly_payment: parseFloat(monthlyPayment),
-          due_date: parseInt(dueDate),
+          creditor_name: normalizedCreditorName,
+          total_amount: parsedTotalAmount,
+          monthly_payment: parsedMonthlyPayment,
+          due_date: parsedDueDate,
         });
         setMessage({ text: t('debt.msg.create_success'), type: "success" });
       }
@@ -132,25 +157,47 @@ export default function DebtsTab() {
       setMessage({ text: err.message || t('debt.msg.error'), type: "error" });
     } finally {
       setIsSubmitting(false);
-      setTimeout(() => setMessage(null), 3000);
+      window.setTimeout(() => setMessage(null), 3000);
     }
   };
 
   const openPayModal = (debt: any) => {
+    const remainingAmount = Number(debt.remaining_amount) || 0;
+    const suggestedPayment = Math.min(Number(debt.monthly_payment) || 0, remainingAmount);
+
     setSelectedDebt(debt);
-    setPayAmount(debt.monthly_payment.toString());
+    setPayAmount(suggestedPayment > 0 ? suggestedPayment.toString() : "");
     setPayAccountId(accounts.length > 0 ? accounts[0].id : "");
     setIsPayModalOpen(true);
   };
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!payAmount || !payAccountId || !selectedDebt) return;
+    const parsedPayAmount = Number(payAmount);
+    const remainingAmount = Number(selectedDebt?.remaining_amount) || 0;
+
+    if (!selectedDebt) return;
+
+    if (!payAccountId) {
+      showTimedMessage(t('debt.msg.error'), "error");
+      return;
+    }
+
+    if (!Number.isFinite(parsedPayAmount) || parsedPayAmount <= 0) {
+      showTimedMessage(t('debt.msg.error'), "error");
+      return;
+    }
+
+    if (parsedPayAmount > remainingAmount) {
+      showTimedMessage(t('debt.msg.error'), "error");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       await createTransaction({
-        amount: parseFloat(payAmount),
+        amount: parsedPayAmount,
         type: 'expense',
         date: new Date().toISOString(),
         note: `${t('debt.pay_title')}: ${selectedDebt.creditor_name}`,
@@ -165,7 +212,7 @@ export default function DebtsTab() {
       setMessage({ text: err.message || t('debt.msg.error'), type: "error" });
     } finally {
       setIsSubmitting(false);
-      setTimeout(() => setMessage(null), 3000);
+      window.setTimeout(() => setMessage(null), 3000);
     }
   };
 
@@ -179,7 +226,7 @@ export default function DebtsTab() {
       setMessage({ text: `${t('debt.msg.error')}: ${err.message}`, type: "error" });
     } finally {
       setConfirmDeleteId(null);
-      setTimeout(() => setMessage(null), 5000);
+      window.setTimeout(() => setMessage(null), 5000);
     }
   };
 
@@ -225,9 +272,13 @@ export default function DebtsTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
           {debts.map((debt) => {
-            const paid = Number(debt.total_amount) - Number(debt.remaining_amount);
-            const pctPaid = (paid / Number(debt.total_amount)) * 100;
-            const isCompleted = Number(debt.remaining_amount) <= 0;
+            const totalAmountValue = Number(debt.total_amount) || 0;
+            const remainingAmountValue = Math.max(Number(debt.remaining_amount) || 0, 0);
+            const paid = totalAmountValue > 0
+              ? Math.max(0, totalAmountValue - Math.min(remainingAmountValue, totalAmountValue))
+              : 0;
+            const pctPaid = totalAmountValue > 0 ? (paid / totalAmountValue) * 100 : 0;
+            const isCompleted = remainingAmountValue <= 0;
             const dueSoon = !isCompleted && isDueSoon(debt.due_date);
 
             // Card style overrides
@@ -274,8 +325,8 @@ export default function DebtsTab() {
                 <div className="flex justify-between items-end mb-2">
                   <div className={`font-semibold ${cardSubClass} text-sm`}>
                     <span className={`text-lg ${cardTitleClass}`}>
-                      {formatAmount(debt.remaining_amount)}
-                    </span> / {formatAmount(debt.total_amount)}
+                      {formatAmount(remainingAmountValue)}
+                    </span> / {formatAmount(totalAmountValue)}
                   </div>
                   <div className={`text-xs font-black ${isCompleted ? 'text-emerald-600' : 'text-blue-500'}`}>
                     {Math.min(pctPaid, 100).toFixed(0)}% {t('debt.paid')}
@@ -411,14 +462,20 @@ export default function DebtsTab() {
             <form onSubmit={handlePay} className="space-y-4">
               <div>
                 <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('debt.pay_wallet_label')}</label>
-                <FancySelect
-                  value={payAccountId}
-                  onChange={(val) => setPayAccountId(val)}
-                  options={accounts.map((a) => ({
-                    label: `${a.name} (${formatAmount(a.balance)})`,
-                    value: a.id
-                  }))}
-                />
+                {accounts.length > 0 ? (
+                  <FancySelect
+                    value={payAccountId}
+                    onChange={(val) => setPayAccountId(val)}
+                    options={accounts.map((a) => ({
+                      label: `${a.name} (${formatAmount(a.balance)})`,
+                      value: a.id
+                    }))}
+                  />
+                ) : (
+                  <div className={`rounded-2xl border px-4 py-3 text-sm font-medium bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 ${textSubClass}`}>
+                    {t('debt.msg.error')}
+                  </div>
+                )}
               </div>
               <div>
                 <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('debt.pay_amount_label')}</label>
@@ -432,7 +489,7 @@ export default function DebtsTab() {
               </div>
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setIsPayModalOpen(false)} className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300`}>{t('common.cancel')}</button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg">
+                <button type="submit" disabled={isSubmitting || accounts.length === 0} className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg disabled:cursor-not-allowed disabled:opacity-60">
                   {isSubmitting ? t('common.saving') : t('common.confirm')}
                 </button>
               </div>

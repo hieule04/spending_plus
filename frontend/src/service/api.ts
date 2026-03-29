@@ -180,6 +180,7 @@ export const updateTransaction = async (id: string, data: {
   note?: string;
   account_id?: string;
   category_id?: string;
+  debt_id?: string | null;
 }) => {
   try {
     const response = await api.put(`/api/transactions/${id}`, data);
@@ -395,7 +396,6 @@ export const createDebt = async (data: {
 export const updateDebt = async (id: string, data: {
   creditor_name?: string;
   total_amount?: number;
-  remaining_amount?: number;
   monthly_payment?: number;
   due_date?: number;
 }) => {
