@@ -55,7 +55,7 @@ export default function MobileLayout({
       </main>
 
       {/* Bottom safe-area fill — solid bg behind the rounded nav, covering home indicator area */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 h-20 bg-white dark:bg-slate-800" aria-hidden="true" />
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-slate-800" style={{ height: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }} aria-hidden="true" />
 
       <nav className="fixed bottom-0 left-0 right-0 z-40 rounded-t-3xl border-t border-gray-200 dark:border-slate-800 bg-white/95 dark:bg-slate-800/95 px-3 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-md items-center justify-between">
