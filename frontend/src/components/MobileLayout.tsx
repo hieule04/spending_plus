@@ -55,8 +55,7 @@ export default function MobileLayout({
       </main>
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', marginBottom: 0 }}
+        className="bottom-nav z-40 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]"
       >
         <div className="mx-auto flex w-full max-w-md items-center justify-between">
           {navItems.map(({ id, label, Icon }) => {
