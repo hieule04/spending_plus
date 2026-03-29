@@ -41,6 +41,27 @@ body {
   height: 100%;
 }
 
+.app-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+}
+
+@supports (-webkit-touch-callout: none) {
+  html {
+    height: -webkit-fill-available;
+  }
+
+  body,
+  #root,
+  .app-shell {
+    min-height: -webkit-fill-available;
+  }
+
+  .app-shell {
+    height: -webkit-fill-available;
+  }
+}
+
 /* ========================================
    SCROLLBAR CUSTOMIZATIONS
    ======================================== */

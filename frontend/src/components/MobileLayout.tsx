@@ -47,17 +47,17 @@ export default function MobileLayout({
   ];
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-gray-50 dark:bg-slate-900 pt-[env(safe-area-inset-top)]">
+    <div className="mobile-shell flex h-full w-full flex-col overflow-hidden bg-gray-50 dark:bg-slate-900">
       <main className="flex-1 overflow-y-auto hide-scrollbar">
-        <div className="px-4 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
+        <div className="mobile-content px-4">
           {children}
         </div>
       </main>
 
       <nav
-        className="bottom-nav z-40 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]"
+        className="bottom-nav z-40 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]"
       >
-        <div className="mx-auto flex w-full max-w-md items-center justify-between">
+        <div className="bottom-nav__inner mx-auto flex w-full max-w-md items-center justify-between">
           {navItems.map(({ id, label, Icon }) => {
             const isActive = id === activeTab;
 
