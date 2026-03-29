@@ -285,6 +285,28 @@ class DebtResponse(DebtBase):
     updated_at: datetime
     model_config = model_config
 
+
+class LoanBase(BaseModel):
+    borrower_name: str
+    amount: Decimal = Field(..., gt=0)
+
+
+class LoanCreate(LoanBase):
+    pass
+
+
+class LoanUpdate(BaseModel):
+    borrower_name: Optional[str] = None
+    amount: Optional[Decimal] = Field(None, gt=0)
+
+
+class LoanResponse(LoanBase):
+    id: UUID
+    user_id: UUID
+    created_at: datetime
+    updated_at: datetime
+    model_config = model_config
+
 # ==========================================
 # 8. Common/System/Stats Schemas
 # ==========================================

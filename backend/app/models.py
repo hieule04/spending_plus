@@ -40,6 +40,7 @@ class User(Base):
     notifications = relationship("Notification", back_populates="user")
     savings_goals = relationship("SavingsGoal", back_populates="user")
     debts = relationship("Debt", back_populates="user")
+    loans = relationship("Loan", back_populates="user")
     chat_messages = relationship("ChatHistory", back_populates="user")
 
 
@@ -185,6 +186,22 @@ class Debt(Base):
 
     user = relationship("User", back_populates="debts")
     transactions = relationship("Transaction", back_populates="debt")
+
+
+class Loan(Base):
+    """Bảng quản lý các khoản cho vay."""
+    __tablename__ = "loans"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    borrower_name = Column(String, nullable=False)
+    amount = Column(Numeric(15, 2), nullable=False)
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+    updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="loans")
 
 
 class ChatHistory(Base):

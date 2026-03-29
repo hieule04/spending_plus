@@ -416,6 +416,48 @@ export const deleteDebt = async (id: string) => {
   }
 };
 
+export const listLoans = async () => {
+  try {
+    const response = await api.get("/api/loans");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Không thể tải danh sách khoản cho vay.");
+  }
+};
+
+export const createLoan = async (data: {
+  borrower_name: string;
+  amount: number;
+}) => {
+  try {
+    const response = await api.post("/api/loans", data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Tạo khoản cho vay thất bại.");
+  }
+};
+
+export const updateLoan = async (id: string, data: {
+  borrower_name?: string;
+  amount?: number;
+}) => {
+  try {
+    const response = await api.put(`/api/loans/${id}`, data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Cập nhật khoản cho vay thất bại.");
+  }
+};
+
+export const deleteLoan = async (id: string) => {
+  try {
+    const response = await api.delete(`/api/loans/${id}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Xóa khoản cho vay thất bại.");
+  }
+};
+
 // ==========================================
 // 11. Chat AI
 // ==========================================
