@@ -23,6 +23,7 @@ class UserBase(BaseModel):
     avatar_url: Optional[str] = None
     is_active: bool = True
     allow_notifications: bool = True
+    currency: str = "đ"
 
 
 class UserCreate(UserBase):
@@ -35,11 +36,17 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     avatar_url: Optional[str] = None
     allow_notifications: Optional[bool] = None
+    currency: Optional[str] = None
 
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
 
 
 class UserResponse(UserBase):
@@ -118,7 +125,7 @@ class CategoryResponse(CategoryBase):
 # ==========================================
 
 class TransactionBase(BaseModel):
-    amount: Decimal
+    amount: Decimal = Field(..., gt=0)
     type: str = Field(..., description="'income' hoặc 'expense'")
     date: datetime
     note: Optional[str] = None
@@ -133,7 +140,7 @@ class TransactionCreate(TransactionBase):
 
 
 class TransactionUpdate(BaseModel):
-    amount: Optional[Decimal] = None
+    amount: Optional[Decimal] = Field(None, gt=0)
     type: Optional[str] = None
     date: Optional[datetime] = None
     note: Optional[str] = None
@@ -251,28 +258,49 @@ class SavingsGoalResponse(SavingsGoalBase):
 
 class DebtBase(BaseModel):
     creditor_name: str
-    total_amount: Decimal
-    remaining_amount: Decimal
-    monthly_payment: Decimal
+    total_amount: Decimal = Field(..., gt=0)
+    remaining_amount: Decimal = Field(..., ge=0)
+    monthly_payment: Decimal = Field(..., gt=0)
     due_date: int = Field(..., ge=1, le=31, description="Ngày hạn hằng tháng (1-31)")
 
 
 class DebtCreate(BaseModel):
     creditor_name: str
-    total_amount: Decimal
-    monthly_payment: Decimal
+    total_amount: Decimal = Field(..., gt=0)
+    monthly_payment: Decimal = Field(..., gt=0)
     due_date: int = Field(..., ge=1, le=31)
 
 
 class DebtUpdate(BaseModel):
     creditor_name: Optional[str] = None
-    total_amount: Optional[Decimal] = None
-    remaining_amount: Optional[Decimal] = None
-    monthly_payment: Optional[Decimal] = None
+    total_amount: Optional[Decimal] = Field(None, gt=0)
+    monthly_payment: Optional[Decimal] = Field(None, gt=0)
     due_date: Optional[int] = Field(None, ge=1, le=31)
 
 
 class DebtResponse(DebtBase):
+    id: UUID
+    user_id: UUID
+    created_at: datetime
+    updated_at: datetime
+    model_config = model_config
+
+
+class LoanBase(BaseModel):
+    borrower_name: str
+    amount: Decimal = Field(..., gt=0)
+
+
+class LoanCreate(LoanBase):
+    pass
+
+
+class LoanUpdate(BaseModel):
+    borrower_name: Optional[str] = None
+    amount: Optional[Decimal] = Field(None, gt=0)
+
+
+class LoanResponse(LoanBase):
     id: UUID
     user_id: UUID
     created_at: datetime

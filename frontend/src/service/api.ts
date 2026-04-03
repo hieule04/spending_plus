@@ -50,6 +50,15 @@ export const loginUser = async (data: { email: string; password: string }) => {
   }
 };
 
+export const verifyOTP = async (data: { email: string; otp: string }) => {
+  try {
+    const response = await api.post("/api/auth/verify-otp", data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Mã OTP không chính xác.");
+  }
+};
+
 // ==========================================
 // 2. Accounts
 // ==========================================
@@ -171,6 +180,7 @@ export const updateTransaction = async (id: string, data: {
   note?: string;
   account_id?: string;
   category_id?: string;
+  debt_id?: string | null;
 }) => {
   try {
     const response = await api.put(`/api/transactions/${id}`, data);
@@ -195,9 +205,10 @@ export const deleteTransaction = async (id: string) => {
 // 5. Thống Kê (Stats)
 // ==========================================
 
-export const getSummaryStats = async (period: string = "month") => {
+export const getSummaryStats = async (period: string = "month", date?: string) => {
   try {
-    const response = await api.get(`/api/stats/summary?period=${period}`);
+    const url = `/api/stats/summary?period=${period}${date ? `&date=${date}` : ""}`;
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể tải dữ liệu thống kê.");
@@ -385,7 +396,6 @@ export const createDebt = async (data: {
 export const updateDebt = async (id: string, data: {
   creditor_name?: string;
   total_amount?: number;
-  remaining_amount?: number;
   monthly_payment?: number;
   due_date?: number;
 }) => {
@@ -403,6 +413,48 @@ export const deleteDebt = async (id: string) => {
     return response.data;
   } catch (error) {
     handleApiError(error, "Xóa khoản nợ thất bại.");
+  }
+};
+
+export const listLoans = async () => {
+  try {
+    const response = await api.get("/api/loans");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Không thể tải danh sách khoản cho vay.");
+  }
+};
+
+export const createLoan = async (data: {
+  borrower_name: string;
+  amount: number;
+}) => {
+  try {
+    const response = await api.post("/api/loans", data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Tạo khoản cho vay thất bại.");
+  }
+};
+
+export const updateLoan = async (id: string, data: {
+  borrower_name?: string;
+  amount?: number;
+}) => {
+  try {
+    const response = await api.put(`/api/loans/${id}`, data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Cập nhật khoản cho vay thất bại.");
+  }
+};
+
+export const deleteLoan = async (id: string) => {
+  try {
+    const response = await api.delete(`/api/loans/${id}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Xóa khoản cho vay thất bại.");
   }
 };
 

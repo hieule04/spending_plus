@@ -50,7 +50,7 @@ export const translations = {
     // Dashboard
     'db.title': 'Phân tích dòng tiền',
     'db.period.all': 'Tất cả',
-    'db.period.day': 'Hôm nay',
+    'db.period.day': 'Ngày',
     'db.period.week': 'Tuần này',
     'db.period.month': 'Tháng này',
     'db.period.year': 'Năm nay',
@@ -165,6 +165,7 @@ export const translations = {
     'bg.msg.save_error': 'Lỗi khi lưu ngân sách',
     'bg.msg.delete_success': 'Đã xóa ngân sách thành công!',
     'bg.msg.delete_error': 'Lỗi khi xóa ngân sách',
+    'bg.msg.please_select': 'Vui lòng chọn danh mục và nhập hạn mức',
     'bg.delete_confirm_title': 'Xác nhận xóa ngân sách',
     'bg.delete_confirm_msg': 'Bạn có chắc chắn muốn xóa mục ngân sách này?',
 
@@ -210,7 +211,7 @@ export const translations = {
 
     // Debts
     'debt.title': 'Quản lý Dư nợ',
-    'debt.subtitle': 'Theo dõi và thanh toán các khoản nợ',
+    'debt.subtitle': 'Theo dõi các khoản nợ và khoản cho vay',
     'debt.add': '+ Thêm khoản nợ',
     'debt.add_new': 'Thêm khoản nợ mới',
     'debt.edit': 'Sửa khoản nợ',
@@ -238,6 +239,21 @@ export const translations = {
     'debt.pay_amount_label': 'Số tiền thanh toán (VNĐ)',
     'debt.delete_confirm_title': 'Xác nhận xóa khoản nợ',
     'debt.delete_confirm_msg': 'Bạn có chắc chắn muốn xóa khoản nợ này? Các giao dịch liên quan sẽ được giữ lại nhưng không còn liên kết.',
+    'loan.title': 'Cho vay',
+    'loan.subtitle': 'Theo dõi những người đang nợ bạn',
+    'loan.add': '+ Thêm khoản cho vay',
+    'loan.add_new': 'Thêm khoản cho vay mới',
+    'loan.edit': 'Sửa khoản cho vay',
+    'loan.no_loans': 'Chưa có khoản cho vay nào',
+    'loan.start': 'Thêm khoản cho vay đầu tiên',
+    'loan.borrower': 'Tên người vay',
+    'loan.borrower_placeholder': 'Ví dụ: Anh Nam, Chị Linh...',
+    'loan.amount': 'Số tiền vay (VNĐ)',
+    'loan.msg.create_success': 'Tạo khoản cho vay thành công!',
+    'loan.msg.update_success': 'Cập nhật khoản cho vay thành công!',
+    'loan.msg.delete_success': 'Đã xoá khoản cho vay.',
+    'loan.delete_confirm_title': 'Xác nhận xóa khoản cho vay',
+    'loan.delete_confirm_msg': 'Bạn có chắc chắn muốn xóa khoản cho vay này?',
 
     // Chat AI
     'chat.title': 'Trợ lý AI',
@@ -413,6 +429,7 @@ export const translations = {
     'bg.msg.save_error': 'Error saving budget',
     'bg.msg.delete_success': 'Budget deleted successfully!',
     'bg.msg.delete_error': 'Error deleting budget',
+    'bg.msg.please_select': 'Please select a category and enter a limit',
     'bg.delete_confirm_title': 'Confirm Delete Budget',
     'bg.delete_confirm_msg': 'Are you sure you want to delete this budget item?',
 
@@ -458,7 +475,7 @@ export const translations = {
 
     // Debts
     'debt.title': 'Debt Management',
-    'debt.subtitle': 'Track and pay off your debts',
+    'debt.subtitle': 'Track your debts and personal loans',
     'debt.add': '+ Add Debt',
     'debt.add_new': 'Add New Debt',
     'debt.edit': 'Edit Debt',
@@ -486,6 +503,21 @@ export const translations = {
     'debt.pay_amount_label': 'Payment amount',
     'debt.delete_confirm_title': 'Confirm Delete Debt',
     'debt.delete_confirm_msg': 'Are you sure you want to delete this debt? Related transactions will be kept but unlinked.',
+    'loan.title': 'Loans',
+    'loan.subtitle': 'Track people who owe you money',
+    'loan.add': '+ Add Loan',
+    'loan.add_new': 'Add New Loan',
+    'loan.edit': 'Edit Loan',
+    'loan.no_loans': 'No loans yet',
+    'loan.start': 'Add your first loan',
+    'loan.borrower': 'Borrower Name',
+    'loan.borrower_placeholder': 'Ex: John, Sarah...',
+    'loan.amount': 'Loan Amount',
+    'loan.msg.create_success': 'Loan created successfully!',
+    'loan.msg.update_success': 'Loan updated successfully!',
+    'loan.msg.delete_success': 'Loan deleted.',
+    'loan.delete_confirm_title': 'Confirm Delete Loan',
+    'loan.delete_confirm_msg': 'Are you sure you want to delete this loan?',
 
     // Chat AI
     'chat.title': 'AI Assistant',

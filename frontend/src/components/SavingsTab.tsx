@@ -5,10 +5,11 @@ import {
 } from "../service/api";
 import FancySelect from "./FancySelect";
 import ConfirmModal from "./ConfirmModal";
+import CurrencyInput from "./CurrencyInput";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function SavingsTab() {
-  const { t, language } = useLanguage();
+  const { t, formatAmount } = useLanguage();
   
   const [goals, setGoals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,8 +198,8 @@ export default function SavingsTab() {
                 <div className="flex justify-between items-end mb-2">
                   <div className={`font-semibold ${cardSubClass} text-sm`}>
                     <span className={`text-lg ${cardTitleClass}`}>
-                      {Number(goal.current_amount).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}
-                    </span> / {Number(goal.target_amount).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ
+                      {formatAmount(goal.current_amount)}
+                    </span> / {formatAmount(goal.target_amount)}
                   </div>
                   <div className={`text-xs font-black ${isCompleted ? 'text-amber-600' : 'text-blue-500'}`}>
                     {Math.min(pct, 100).toFixed(0)}%
@@ -253,7 +254,13 @@ export default function SavingsTab() {
               </div>
               <div>
                 <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('sv.target_amount')}</label>
-                <input type="number" required min="0" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} className="w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" placeholder="20,000,000" />
+                <CurrencyInput
+                  value={targetAmount}
+                  onChange={setTargetAmount}
+                  required
+                  className="w-full px-4 py-3 rounded-2xl outline-none font-medium transition-all bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  placeholder="20 000 000"
+                />
               </div>
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 px-4 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{t('common.cancel')}</button>
@@ -276,12 +283,18 @@ export default function SavingsTab() {
                 <FancySelect 
                   value={selectedAccount} 
                   onChange={(val) => setSelectedAccount(val)}
-                  options={accounts.map((a) => ({ label: `${a.name} (${Number(a.balance).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ)`, value: a.id }))}
+                  options={accounts.map((a) => ({ label: `${a.name} (${formatAmount(a.balance)})`, value: a.id }))}
                 />
               </div>
               <div>
                 <label className={`block text-sm font-bold mb-2 ${textSubClass}`}>{t('sv.action_amount')}</label>
-                <input type="number" required min="1" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full px-4 py-3 rounded-2xl outline-none font-medium bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" placeholder="100,000" />
+                <CurrencyInput
+                  value={amount}
+                  onChange={setAmount}
+                  required
+                  className="w-full px-4 py-3 rounded-2xl outline-none font-medium bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  placeholder="100 000"
+                />
               </div>
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setIsActionModalOpen(false)} className="flex-1 py-3 px-4 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{t('common.cancel')}</button>

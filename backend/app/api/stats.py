@@ -14,22 +14,32 @@ from app import models, schemas
 
 router = APIRouter(prefix="/stats", tags=["Stats"])
 
-def get_start_date(period: str) -> datetime | None:
-    now = datetime.now()
+def get_range(period: str, ref_date: datetime) -> tuple[datetime | None, datetime | None]:
     if period == "day":
-        return now.replace(hour=0, minute=0, second=0, microsecond=0)
+        start = ref_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        return start, start + timedelta(days=1)
     elif period == "week":
-        start = now - timedelta(days=now.weekday())
-        return start.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Bắt đầu từ thứ 2 của tuần chứa ref_date
+        start = ref_date - timedelta(days=ref_date.weekday())
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        return start, start + timedelta(days=7)
     elif period == "month":
-        return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start = ref_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        # Tính tháng tiếp theo
+        if start.month == 12:
+            end = start.replace(year=start.year + 1, month=1)
+        else:
+            end = start.replace(month=start.month + 1)
+        return start, end
     elif period == "year":
-        return now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-    return None
+        start = ref_date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        return start, start.replace(year=start.year + 1)
+    return None, None
 
 @router.get("/summary", response_model=schemas.DashboardSummaryResponse)
 def get_dashboard_summary(
     period: str = Query("month", description="Lọc theo: all, day, week, month, year"),
+    date: str = Query(None, description="Ngày tham chiếu (ISO format) để tính khoảng thời gian"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
@@ -39,7 +49,8 @@ def get_dashboard_summary(
     pie_data (chi tiêu theo danh mục), column_data (thu vs chi), 
     và line_data (xu hướng dòng tiền).
     """
-    start_date = get_start_date(period)
+    ref_date = datetime.fromisoformat(date) if date else datetime.now()
+    start_date, end_date = get_range(period, ref_date)
 
     # 1. Số dư hiện tại (Tổng balance tất cả các ví) - KHÔNG LỌC THEO THỜI GIAN
     total_balance_query = db.query(func.sum(models.Account.balance))\
@@ -50,6 +61,8 @@ def get_dashboard_summary(
     base_tx_query = db.query(models.Transaction).filter(models.Transaction.user_id == current_user.id)
     if start_date:
         base_tx_query = base_tx_query.filter(models.Transaction.date >= start_date)
+    if end_date:
+        base_tx_query = base_tx_query.filter(models.Transaction.date < end_date)
 
     # 2. Tổng thu (theo period)
     total_income_query = base_tx_query.filter(models.Transaction.type == 'income').with_entities(func.sum(models.Transaction.amount)).scalar()
@@ -72,6 +85,8 @@ def get_dashboard_summary(
     )
     if start_date:
         pie_query = pie_query.filter(models.Transaction.date >= start_date)
+    if end_date:
+        pie_query = pie_query.filter(models.Transaction.date < end_date)
 
     category_expenses = pie_query.group_by(
         models.Category.id,
@@ -107,6 +122,8 @@ def get_dashboard_summary(
 
     if start_date:
         line_query = line_query.filter(models.Transaction.date >= start_date)
+    if end_date:
+        line_query = line_query.filter(models.Transaction.date < end_date)
 
     line_data_result = line_query.group_by(group_date).order_by(group_date).all()
 

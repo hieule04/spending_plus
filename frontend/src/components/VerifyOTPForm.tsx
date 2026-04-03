@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { registerUser } from "../service/api";
+import { verifyOTP } from "../service/api";
 
-interface RegisterFormProps {
-  onSuccess?: (email: string) => void;
+interface VerifyOTPFormProps {
+  email: string;
+  onSuccess: () => void;
+  onBack: () => void;
 }
 
-export default function RegisterForm({ onSuccess }: RegisterFormProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function VerifyOTPForm({ email, onSuccess, onBack }: VerifyOTPFormProps) {
+  const [otp, setOtp] = useState("");
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -16,20 +17,13 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     setLoading(true);
     setMessage(null);
     try {
-      const userData = await registerUser({ email, password });
-      setMessage({ text: "Đăng ký thành công!", type: "success" });
-      if (userData && userData.id) {
-        localStorage.setItem("user_id", userData.id);
-      }
+      await verifyOTP({ email, otp });
+      setMessage({ text: "Xác thực hoàn tất!", type: "success" });
       setTimeout(() => {
-        if (onSuccess) {
-          onSuccess(email);
-        } else {
-          setEmail(""); setPassword("");
-        }
-      }, 1000);
+        onSuccess();
+      }, 1500);
     } catch (error: any) {
-      setMessage({ text: error.message, type: "error" });
+      setMessage({ text: error.message || "Mã OTP không chính xác", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -42,7 +36,10 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
   return (
     <div className={`max-w-md w-full mx-auto p-10 rounded-3xl transition-all duration-300 ${cardClass}`}>
-      <h2 className={`text-3xl font-black text-center mb-10 ${headingClass}`}>Tạo Tài Khoản</h2>
+      <h2 className={`text-3xl font-black text-center mb-4 ${headingClass}`}>Xác thực OTP</h2>
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400 mb-8">
+        Mã xác thực đã được gửi đến <br/><span className="font-bold">{email}</span>
+      </p>
       
       {message && (
         <div className={`p-4 mb-8 rounded-2xl text-sm font-bold border transition-all animate-fade-in ${
@@ -59,24 +56,31 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div>
-          <label className={`block text-xs uppercase tracking-widest mb-2 ${labelClass}`}>Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            className={`w-full px-5 py-4 border rounded-2xl outline-none ${inputClass}`}
-            placeholder="you@example.com" />
-        </div>
-        
-        <div>
-          <label className={`block text-xs uppercase tracking-widest mb-2 ${labelClass}`}>Mật khẩu</label>
-          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-            className={`w-full px-5 py-4 border rounded-2xl outline-none ${inputClass}`}
-            placeholder="••••••••" />
+          <label className={`block text-xs uppercase tracking-widest mb-2 ${labelClass}`}>Mã OTP (6 chữ số)</label>
+          <input 
+            type="text" 
+            required 
+            maxLength={6}
+            value={otp} 
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+            className={`w-full px-5 py-4 border rounded-2xl outline-none text-center text-2xl tracking-[0.5em] font-mono ${inputClass}`}
+            placeholder="••••••" 
+          />
         </div>
 
-        <button type="submit" disabled={loading}
+        <button type="submit" disabled={loading || otp.length < 6}
           className={`w-full py-4.5 px-6 rounded-2xl text-white font-black text-lg shadow-xl transition-all active:scale-[0.98] ${
-            loading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30"
+            loading || otp.length < 6 ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30"
           }`}>
-          {loading ? "Đang xử lý..." : "Đăng Ký"}
+          {loading ? "Đang xác thực..." : "Xác Nhận"}
+        </button>
+        
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-full mt-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+        >
+          &larr; Quay lại
         </button>
       </form>
     </div>

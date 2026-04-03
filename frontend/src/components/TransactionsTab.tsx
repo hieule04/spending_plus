@@ -3,6 +3,7 @@ import { listTransactions, createTransaction, updateTransaction, deleteTransacti
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
 import MobilePageHeader from "./MobilePageHeader";
+import CurrencyInput from "./CurrencyInput";
 import { useLanguage } from "../context/LanguageContext";
 
 interface Transaction { id: string; amount: number; type: string; date: string; note: string | null; account_id: string; category_id: string | null; created_at: string; }
@@ -14,7 +15,7 @@ interface TransactionsTabProps {
 }
 
 export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabProps) {
-  const { t, language } = useLanguage();
+  const { t, language, formatAmount } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -167,7 +168,15 @@ export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabPro
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.amount')}</label><input type="number" required min="0" step="0.01" value={formAmount} onChange={(e) => setFormAmount(e.target.value)} className={`w-full px-4 py-2 ${inputClass}`} placeholder="0" /></div>
+                <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.amount')}</label>
+                  <CurrencyInput 
+                    value={formAmount} 
+                    onChange={setFormAmount} 
+                    required 
+                    className={`w-full px-4 py-2 ${inputClass}`} 
+                    placeholder="0" 
+                  />
+                </div>
                 <div><label className={`block text-sm mb-1 ${subTextClass}`}>{t('tx.form.type')}</label>
                   <FancySelect
                     value={formType}
@@ -259,7 +268,7 @@ export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabPro
                     </div>
                     <div className="shrink-0 text-right">
                       <span className={`font-mono text-sm font-bold ${isIncome ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
-                        {isIncome ? "+" : "-"}{Number(txn.amount).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} đ
+                        {isIncome ? "+" : "-"}{formatAmount(txn.amount)}
                       </span>
                     </div>
                   </div>
@@ -292,7 +301,7 @@ export default function TransactionsTab({ onOpenMobileMenu }: TransactionsTabPro
                       <td className={`px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300`}>{getAccountName(txn.account_id)}</td>
                       <td className="px-4 py-3 text-right">
                         <span className={`font-mono font-bold ${isIncome ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
-                          {isIncome ? "+" : "-"}{Number(txn.amount).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} đ
+                          {isIncome ? "+" : "-"}{formatAmount(txn.amount)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">

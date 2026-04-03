@@ -25,7 +25,7 @@ from app.database import get_db, engine
 from app import models, schemas
 
 # Import tất cả các routers
-from app.api import auth, accounts, categories, transactions, users, budgets, stats, notifications, savings, debts, chat
+from app.api import auth, accounts, categories, transactions, users, budgets, stats, notifications, savings, debts, loans, chat
 
 # ==========================================
 # 1. KHỞI TẠO APP
@@ -91,9 +91,6 @@ async def global_exception_handler(request, exc):
     return HTMLResponse(content=f"Internal Server Error: {str(exc)}", status_code=500)
 
 
-@app.options("/{full_path:path}", include_in_schema=False)
-async def preflight_handler(full_path: str) -> Response:
-    return Response(status_code=200)
 
 
 # ==========================================
@@ -110,6 +107,7 @@ app.include_router(budgets.router, prefix="/api/budgets", tags=["Budgets"])
 app.include_router(notifications.router, prefix="/api", tags=["Notifications"])
 app.include_router(savings.router, prefix="/api", tags=["Savings"])
 app.include_router(debts.router, prefix="/api", tags=["Debts"])
+app.include_router(loans.router, prefix="/api", tags=["Loans"])
 app.include_router(chat.router, prefix="/api", tags=["Chat AI"])
 
 

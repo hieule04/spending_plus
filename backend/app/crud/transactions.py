@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from sqlalchemy import func
 from app import models, schemas
+from app.crud import debts as crud_debts
 
 
 # ==========================================
@@ -64,6 +65,18 @@ def create_transaction(
     Tạo giao dịch mới và tự động cập nhật balance của account.
     Caller phải truyền vào account đã được validate thuộc về user.
     """
+    debt = None
+    if data.debt_id:
+        debt = crud_debts.get_debt(db, data.debt_id, user_id)
+        if not debt:
+            raise ValueError("Khoản nợ không tồn tại hoặc không thuộc về bạn.")
+        if data.type != "expense":
+            raise ValueError("Chỉ có giao dịch chi tiêu mới được liên kết với khoản nợ.")
+
+        projected_paid_amount = crud_debts.get_debt_paid_amount(db, debt.id, user_id) + data.amount
+        if projected_paid_amount > debt.total_amount:
+            raise ValueError("Số tiền thanh toán vượt quá dư nợ còn lại.")
+
     new_txn = models.Transaction(
         amount=data.amount,
         type=data.type,
@@ -114,16 +127,9 @@ def create_transaction(
                 db.add(new_notif)
 
     # Cập nhật khoản nợ (Debt) nếu có liên kết
-    if data.debt_id and data.type == "expense":
-        debt = db.query(models.Debt).filter(
-            models.Debt.id == data.debt_id,
-            models.Debt.user_id == user_id
-        ).first()
-        if debt:
-            debt.remaining_amount = max(
-                Decimal("0.0"),
-                debt.remaining_amount - data.amount
-            )
+    if debt:
+        db.flush()
+        crud_debts.sync_debt_remaining_amount(db, debt)
 
     db.commit()
     db.refresh(new_txn)
@@ -220,9 +226,40 @@ def update_transaction(
     """
     old_amount = existing.amount
     old_type = existing.type
+    old_debt_id = existing.debt_id
 
-    new_amount = data.amount if data.amount is not None else old_amount
-    new_type = data.type if data.type is not None else old_type
+    update_data = data.model_dump(exclude_unset=True)
+    new_amount = update_data.get("amount", old_amount)
+    new_type = update_data.get("type", old_type)
+    new_debt_id = update_data.get("debt_id", old_debt_id)
+
+    debts_to_sync: list[models.Debt] = []
+    if old_debt_id:
+        old_debt = crud_debts.get_debt(db, old_debt_id, existing.user_id)
+        if old_debt:
+            debts_to_sync.append(old_debt)
+
+    if new_debt_id:
+        new_debt = crud_debts.get_debt(db, new_debt_id, existing.user_id)
+        if not new_debt:
+            raise ValueError("Khoản nợ không tồn tại hoặc không thuộc về bạn.")
+        if new_type != "expense":
+            raise ValueError("Chỉ có giao dịch chi tiêu mới được liên kết với khoản nợ.")
+
+        projected_paid_amount = (
+            crud_debts.get_debt_paid_amount(
+                db,
+                new_debt.id,
+                existing.user_id,
+                exclude_transaction_id=existing.id,
+            )
+            + new_amount
+        )
+        if projected_paid_amount > new_debt.total_amount:
+            raise ValueError("Số tiền thanh toán vượt quá dư nợ còn lại.")
+
+        if all(debt.id != new_debt.id for debt in debts_to_sync):
+            debts_to_sync.append(new_debt)
 
     # Hoàn trả balance cũ
     apply_balance(old_account, old_amount, old_type, reverse=True)
@@ -231,9 +268,12 @@ def update_transaction(
     apply_balance(new_account, new_amount, new_type)
 
     # Cập nhật các trường
-    update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(existing, key, value)
+
+    db.flush()
+    for debt in debts_to_sync:
+        crud_debts.sync_debt_remaining_amount(db, debt)
 
     db.commit()
     db.refresh(existing)
@@ -246,6 +286,15 @@ def delete_transaction(
     account: models.Account,
 ) -> None:
     """Xóa giao dịch và hoàn trả balance về tài khoản."""
+    debt = None
+    if existing.debt_id:
+        debt = crud_debts.get_debt(db, existing.debt_id, existing.user_id)
+
     apply_balance(account, existing.amount, existing.type, reverse=True)
     db.delete(existing)
+
+    db.flush()
+    if debt:
+        crud_debts.sync_debt_remaining_amount(db, debt)
+
     db.commit()

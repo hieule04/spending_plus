@@ -1,9 +1,78 @@
-@import url("https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-bottom-nav-height: 4.25rem;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+}
+
+body,
+#root {
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+}
+
+body {
+  overscroll-behavior-y: none;
+}
+
 .font-wordmark {
   font-family: "Sora", "Segoe UI", sans-serif;
+}
+
+.mobile-shell {
+  padding-top: var(--safe-area-top);
+}
+
+.mobile-content {
+  padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--safe-area-bottom));
+}
+
+/* Bottom navigation safe-area handling for iPhone standalone */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  box-sizing: border-box;
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.bottom-nav__inner {
+  min-height: var(--mobile-bottom-nav-height);
+}
+
+.mobile-drawer-layer,
+.mobile-drawer-backdrop,
+.mobile-drawer-panel {
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+}
+
+.mobile-drawer-layer,
+.mobile-drawer-backdrop {
+  inset: 0;
+}
+
+.mobile-drawer-panel {
+  height: 100%;
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
+  box-sizing: border-box;
 }

@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { listAccounts, createAccount, updateAccount, deleteAccount } from "../service/api";
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
+import CurrencyInput from "./CurrencyInput";
 import { useLanguage } from "../context/LanguageContext";
 
 interface Account { id: string; name: string; type: string; balance: number; created_at: string; }
 
 export default function AccountsTab() {
-  const { t, language } = useLanguage();
+  const { t, formatAmount } = useLanguage();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -145,7 +146,7 @@ export default function AccountsTab() {
               <div className="mt-8">
                 <p className={`text-xs font-bold uppercase tracking-widest ${textSubClass} mb-1`}>{t('acc.form.balance')}</p>
                 <div className={`text-2xl font-black font-mono ${Number(acc.balance) >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
-                  {Number(acc.balance).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} <span className="text-sm font-sans font-bold opacity-70">đ</span>
+                  {formatAmount(acc.balance)}
                 </div>
               </div>
             </div>
@@ -192,8 +193,12 @@ export default function AccountsTab() {
                 />
               </div>
               <div>
-                <label className={`block text-sm font-bold mb-1 ${textSubClass}`}>{t('acc.form.balance')} (VNĐ)</label>
-                <input type="number" step="0.01" value={formBalance} onChange={(e) => setFormBalance(e.target.value)} className={`w-full px-4 py-3 ${inputClass}`} />
+                <label className={`block text-sm font-bold mb-1 ${textSubClass}`}>{t('acc.form.balance')}</label>
+                <CurrencyInput
+                  value={formBalance}
+                  onChange={setFormBalance}
+                  className={`w-full px-4 py-3 ${inputClass}`}
+                />
               </div>
               
               <div className="pt-4 flex gap-3">

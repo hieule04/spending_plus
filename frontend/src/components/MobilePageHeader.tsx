@@ -13,7 +13,7 @@ export default function MobilePageHeader({
   className = "",
 }: MobilePageHeaderProps) {
   return (
-    <div className={`md:hidden pt-[env(safe-area-inset-top)] ${className}`}>
+    <div className={`md:hidden ${className}`}>
       <div className="flex items-center gap-3 pl-1 pr-0">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <button
