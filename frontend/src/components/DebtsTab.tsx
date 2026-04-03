@@ -39,6 +39,14 @@ const normalizeMoney = (value: unknown) => {
   return String(value ?? "").replace(/\.0+$/, "").replace(/[^\d]/g, "");
 };
 
+const getLoanApiErrorMessage = (error: unknown, fallback: string) => {
+  const message = error instanceof Error ? error.message : "";
+  if (/api route not found|not found/i.test(message)) {
+    return "Phiên bản backend hiện tại chưa hỗ trợ API khoản cho vay. Hãy cập nhật hoặc build lại backend.";
+  }
+  return message || fallback;
+};
+
 export default function DebtsTab() {
   const { t, language, formatAmount } = useLanguage();
   const [debts, setDebts] = useState<DebtItem[]>([]);
@@ -94,7 +102,12 @@ export default function DebtsTab() {
         throw accountResult.reason;
       }
 
-      setLoans(loanResult.status === "fulfilled" ? loanResult.value || [] : []);
+      if (loanResult.status === "fulfilled") {
+        setLoans(loanResult.value || []);
+      } else {
+        setLoans([]);
+        setMessage({ text: getLoanApiErrorMessage(loanResult.reason, t("debt.msg.load_error")), type: "error" });
+      }
     } catch (err: any) {
       setMessage({ text: err.message || t("debt.msg.load_error"), type: "error" });
     } finally {
@@ -197,7 +210,7 @@ export default function DebtsTab() {
       setIsLoanModalOpen(false);
       fetchData();
     } catch (err: any) {
-      setMessage({ text: err.message || t("debt.msg.error"), type: "error" });
+      setMessage({ text: getLoanApiErrorMessage(err, t("debt.msg.error")), type: "error" });
     } finally {
       setIsSubmitting(false);
       window.setTimeout(() => setMessage(null), 3000);
