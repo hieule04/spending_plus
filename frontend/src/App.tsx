@@ -122,7 +122,7 @@ function App() {
 
   if (!isLoggedIn) {
     return (
-      <div className={`app-shell overscroll-none flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
+      <div className={`app-shell overscroll-none flex min-h-[100dvh] flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
         <div className={`max-w-md w-full rounded-3xl shadow-2xl p-8 text-center relative animate-fade-in bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
           <header className={`mb-8 ${authMode !== 'none' ? 'opacity-80 scale-95 transition-all' : 'transition-all scale-100'}`}>
             <AppWordmark size="lg" className="justify-center pb-2 mb-2" />
@@ -204,11 +204,11 @@ function App() {
   }
 
   return (
-    <div className={`app-shell overflow-hidden flex flex-col items-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
-      <div className="w-full max-w-[1600px] h-full flex flex-col md:flex-row relative md:gap-4 md:p-6 lg:p-8">
+    <div className={`app-shell overflow-hidden flex min-h-[100dvh] flex-col items-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
+      <div className="w-full max-w-[1600px] h-full min-h-[100dvh] flex flex-col md:flex-row relative md:gap-4 md:p-6 lg:p-8">
 
         {/* Mobile View Container */}
-        <div className="md:hidden fixed inset-0 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900">
+        <div className="md:hidden fixed inset-0 flex min-h-[100dvh] flex-col overflow-hidden bg-slate-50 dark:bg-slate-900">
           
           {/* Mobile Drawer */}
           {mobileMenuOpen && (
@@ -242,7 +242,7 @@ function App() {
                     </button>
                   </div>
                 </div>
-                <nav className="flex-1 overflow-y-auto px-5 py-5">
+                <nav className="mobile-scroll-region flex-1 overflow-y-auto px-5 py-5">
                   {mobileDrawerTabs.map((tab, index) => (
                     <div key={tab.id}>
                       <button

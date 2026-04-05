@@ -205,7 +205,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto md:overflow-hidden hide-scrollbar space-y-4 sm:space-y-6 md:space-y-4 pb-2">
+      <div className="mobile-scroll-region flex-1 overflow-y-auto md:overflow-hidden hide-scrollbar space-y-4 sm:space-y-6 md:space-y-4 pb-2 md:pb-2">
       {loading && !stats ? (
         <div className={`flex justify-center items-center h-48 p-6 rounded-2xl ${cardClass}`}>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
