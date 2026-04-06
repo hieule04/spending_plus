@@ -4,7 +4,9 @@ Router CRUD cho bảng Transactions (Giao dịch).
 Tất cả đều yêu cầu JWT authentication.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -64,11 +66,20 @@ def create(
 def list_all(
     skip: int = 0,
     limit: int = 50,
+    start_date: datetime | None = Query(default=None),
+    end_date: datetime | None = Query(default=None),
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Lấy danh sách giao dịch của user, phân trang."""
-    return crud_txn.list_transactions(db, user_id=current_user.id, skip=skip, limit=limit)
+    return crud_txn.list_transactions(
+        db,
+        user_id=current_user.id,
+        skip=skip,
+        limit=limit,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 # ------------------------------------------

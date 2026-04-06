@@ -47,7 +47,7 @@ export default function MobileLayout({
   ];
 
   return (
-    <div className="mobile-shell flex h-full min-h-[100dvh] w-full flex-col overflow-hidden bg-gray-50 dark:bg-slate-900">
+    <div className="mobile-shell flex h-full w-full flex-col overflow-hidden bg-gray-50 dark:bg-slate-900">
       <main className="flex-1 overflow-y-auto hide-scrollbar">
         <div className="mobile-content px-4">
           {children}

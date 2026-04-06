@@ -126,8 +126,8 @@ export default function ChatTab({ onOpenMobileMenu }: ChatTabProps) {
   const subTextClass = "text-slate-500 dark:text-slate-400 font-bold";
 
   return (
-    <div className="flex flex-col h-full animate-fade-in relative">
-      <MobilePageHeader onOpenMobileMenu={onOpenMobileMenu} className="mb-4" />
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden animate-fade-in">
+      <MobilePageHeader onOpenMobileMenu={onOpenMobileMenu} className="mb-4 shrink-0" />
 
       {/* Toast thông báo giao dịch tự động */}
       {showToast && (
@@ -139,9 +139,9 @@ export default function ChatTab({ onOpenMobileMenu }: ChatTabProps) {
         </div>
       )}
       {/* Combined Chat Panel */}
-      <div className={`flex flex-1 flex-col overflow-hidden min-h-0 ${cardClass}`}>
+      <div className={`flex min-h-0 flex-1 flex-col overflow-hidden ${cardClass}`}>
         {/* Header (Internal) */}
-        <div className={`flex items-center gap-4 p-4 sm:p-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50`}>
+        <div className={`shrink-0 flex items-center gap-4 border-b border-slate-100 bg-slate-50/50 p-4 dark:border-slate-700/50 dark:bg-slate-800/50 sm:p-5`}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0">
             <span className="text-xl">🤖</span>
           </div>
@@ -152,7 +152,7 @@ export default function ChatTab({ onOpenMobileMenu }: ChatTabProps) {
         </div>
 
         {/* Messages Area */}
-        <div className="mobile-scroll-region flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
+        <div className="mobile-scroll-region min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
           {isInitialLoading ? (
             <div className="flex justify-center items-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
@@ -219,7 +219,7 @@ export default function ChatTab({ onOpenMobileMenu }: ChatTabProps) {
         </div>
 
         {/* Input Area (Internal) */}
-        <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-800/30">
+        <div className="shrink-0 border-t border-slate-100 bg-slate-50/30 p-3 dark:border-slate-700/50 dark:bg-slate-800/30 sm:p-4">
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500/50 transition-all shadow-inner">
             <input
               ref={inputRef}

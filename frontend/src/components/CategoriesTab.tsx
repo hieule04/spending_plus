@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { listCategories, createCategory, updateCategory, deleteCategory } from "../service/api";
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
+import MobilePageHeader from "./MobilePageHeader";
 import { useLanguage } from "../context/LanguageContext";
 
 interface Category { id: string; name: string; type: string; icon: string | null; color: string | null; created_at: string; }
@@ -9,7 +10,11 @@ interface Category { id: string; name: string; type: string; icon: string | null
 const DEFAULT_ICONS = ["🍔", "🏠", "🚗", "💊", "🎮", "📚", "💰", "🎁", "✈️", "☕", "🛒", "📱"];
 const DEFAULT_COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899"];
 
-export default function CategoriesTab() {
+interface CategoriesTabProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export default function CategoriesTab({ onOpenMobileMenu }: CategoriesTabProps) {
   const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,9 +58,21 @@ export default function CategoriesTab() {
 
   return (
     <div className="space-y-6">
+      <MobilePageHeader onOpenMobileMenu={onOpenMobileMenu} />
       <div className="flex items-center justify-between">
         <h2 className={`text-xl font-bold ${headingClass}`}>{t('cat.title')}</h2>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors text-sm">{t('cat.add')}</button>
+        <button
+          onClick={() => { resetForm(); setShowForm(true); }}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-2xl font-bold leading-none text-white transition-colors hover:bg-blue-500 md:h-auto md:w-auto md:rounded-xl md:px-5 md:py-2 md:text-sm md:font-semibold"
+          aria-label={t('cat.add')}
+        >
+          <span className="md:hidden">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
+          <span className="hidden md:inline">{t('cat.add')}</span>
+        </button>
       </div>
 
       {message && (

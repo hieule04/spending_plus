@@ -20,7 +20,6 @@ from sqlalchemy import func, extract
 from app.core.config import settings
 from app import models, schemas
 from app.crud import transactions as crud_txn
-from app.crud import accounts as crud_accounts
 
 
 # ============================================================
@@ -209,6 +208,37 @@ def _build_http_options(verify_value):
         client_args={"verify": verify_value},
         async_client_args={"verify": verify_value},
     )
+
+
+def _get_default_ai_account(user_id: uuid.UUID, db: Session) -> models.Account | None:
+    """
+    Chọn tài khoản mặc định cho giao dịch tạo từ AI.
+    Ưu tiên các nguồn tiền kiểu thẻ/ngân hàng trước, chỉ dùng tiền mặt khi không còn lựa chọn khác.
+    """
+    accounts = (
+        db.query(models.Account)
+        .filter(models.Account.user_id == user_id)
+        .order_by(models.Account.created_at.asc())
+        .all()
+    )
+    if not accounts:
+        return None
+
+    account_type_priority = {
+        "credit": 0,
+        "bank": 1,
+        "e-wallet": 2,
+        "saving": 3,
+        "cash": 4,
+    }
+
+    return min(
+        accounts,
+        key=lambda account: (
+            account_type_priority.get((account.type or "").lower(), 99),
+            account.created_at or datetime.min,
+        ),
+    )
 # ============================================================
 # AIService Class
 # ============================================================
@@ -342,10 +372,8 @@ class AIService:
             if category:
                 category_id = category.id
 
-        # Lấy tài khoản đầu tiên của user làm mặc định
-        account = db.query(models.Account).filter(
-            models.Account.user_id == user_id
-        ).first()
+        # Giao dịch tạo từ AI mặc định ưu tiên tài khoản thẻ/ngân hàng, không ưu tiên tiền mặt.
+        account = _get_default_ai_account(user_id, db)
 
         if not account:
             return False  # User chưa có tài khoản nào

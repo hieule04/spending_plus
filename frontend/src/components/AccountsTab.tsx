@@ -3,11 +3,16 @@ import { listAccounts, createAccount, updateAccount, deleteAccount } from "../se
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
 import CurrencyInput from "./CurrencyInput";
+import MobilePageHeader from "./MobilePageHeader";
 import { useLanguage } from "../context/LanguageContext";
 
 interface Account { id: string; name: string; type: string; balance: number; created_at: string; }
 
-export default function AccountsTab() {
+interface AccountsTabProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export default function AccountsTab({ onOpenMobileMenu }: AccountsTabProps) {
   const { t, formatAmount } = useLanguage();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +106,7 @@ export default function AccountsTab() {
 
   return (
     <div className="h-full flex flex-col relative w-full p-2">
+      <MobilePageHeader onOpenMobileMenu={onOpenMobileMenu} className="mb-4" />
       {/* Header Area */}
       <div className="mb-8">
         <h2 className={`text-4xl font-extrabold tracking-tight ${textTitleClass}`}>{t('acc.title')}</h2>
@@ -155,13 +161,19 @@ export default function AccountsTab() {
           {/* Add New Account Card */}
           <button 
             onClick={() => { resetForm(); setShowForm(true); }}
-            className={`bg-transparent border-dashed border-2 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-3xl flex flex-col items-center justify-center min-h-[160px] transition-all group`}
+            className={`bg-transparent border-dashed border-2 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-3xl flex flex-col items-center justify-center min-h-[120px] md:min-h-[160px] transition-all group`}
+            aria-label={t('acc.add_new')}
           >
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-all group-hover:scale-110 group-hover:rotate-90 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`}>
+            <div className={`hidden md:flex w-12 h-12 rounded-full items-center justify-center mb-3 transition-all group-hover:scale-110 group-hover:rotate-90 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             </div>
-            <span className={`font-black tracking-wide text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400`}>
+            <span className={`hidden md:inline font-black tracking-wide text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400`}>
               {t('acc.add_new')}
+            </span>
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 md:hidden">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 5v14M5 12h14" />
+              </svg>
             </span>
           </button>
         </div>
