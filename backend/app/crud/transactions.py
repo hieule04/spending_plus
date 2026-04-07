@@ -5,6 +5,7 @@ Bao gồm logic tự động cập nhật balance khi thêm/sửa/xóa giao dị
 """
 
 from uuid import UUID
+from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
 
@@ -42,17 +43,22 @@ def apply_balance(
 # ==========================================
 
 def list_transactions(
-    db: Session, user_id: UUID, skip: int = 0, limit: int = 50
+    db: Session,
+    user_id: UUID,
+    skip: int = 0,
+    limit: int = 50,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
 ) -> list[models.Transaction]:
     """Lấy danh sách giao dịch của user, sắp xếp theo ngày giảm dần."""
-    return (
-        db.query(models.Transaction)
-        .filter(models.Transaction.user_id == user_id)
-        .order_by(models.Transaction.date.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    query = db.query(models.Transaction).filter(models.Transaction.user_id == user_id)
+
+    if start_date is not None:
+        query = query.filter(models.Transaction.date >= start_date)
+    if end_date is not None:
+        query = query.filter(models.Transaction.date < end_date)
+
+    return query.order_by(models.Transaction.date.desc()).offset(skip).limit(limit).all()
 
 
 def create_transaction(

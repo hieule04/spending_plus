@@ -15,6 +15,7 @@ import MobileLayout from "./components/MobileLayout"
 import MobileProfilePanel from "./components/MobileProfilePanel"
 import AppWordmark from "./components/AppWordmark"
 import { getProfile } from "./service/api"
+import { clearAuthSession, getValidStoredToken } from "./service/auth"
 import "./App.css"
 import { useLanguage } from "./context/LanguageContext"
 
@@ -32,7 +33,7 @@ function App() {
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = localStorage.getItem("access_token");
+      const token = getValidStoredToken();
       setIsLoggedIn(!!token);
     };
     checkAuth();
@@ -50,9 +51,14 @@ function App() {
     if (!isLoggedIn) return;
 
     const fetchProfile = async () => {
-      const data = await getProfile();
-      setUserName(data?.full_name?.trim() || "");
-      setUserAvatar(data?.avatar_url || null);
+      try {
+        const data = await getProfile();
+        setUserName(data?.full_name?.trim() || "");
+        setUserAvatar(data?.avatar_url || null);
+      } catch {
+        clearAuthSession();
+        window.dispatchEvent(new Event("user_logout"));
+      }
     };
 
     fetchProfile();
@@ -64,8 +70,7 @@ function App() {
   }, [isLoggedIn]);
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user_id");
+    clearAuthSession();
     window.dispatchEvent(new Event("user_logout"));
     setAuthMode('none');
   };
@@ -122,7 +127,7 @@ function App() {
 
   if (!isLoggedIn) {
     return (
-      <div className={`app-shell overscroll-none flex min-h-0 flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
+      <div className={`app-shell safe-viewport-shell overscroll-none flex min-h-0 flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
         <div className={`max-w-md w-full rounded-3xl shadow-2xl p-8 text-center relative animate-fade-in bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
           <header className={`mb-8 ${authMode !== 'none' ? 'opacity-80 scale-95 transition-all' : 'transition-all scale-100'}`}>
             <AppWordmark size="lg" className="justify-center pb-2 mb-2" />
@@ -204,11 +209,11 @@ function App() {
   }
 
   return (
-    <div className={`app-shell flex min-h-0 flex-col items-center overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
+    <div className={`app-shell safe-viewport-shell flex min-h-0 flex-col items-center overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
       <div className="relative flex min-h-0 w-full max-w-[1600px] flex-1 flex-col md:grid md:grid-cols-[16rem_minmax(0,1fr)] md:gap-4 md:p-6 lg:p-8">
 
         {/* Mobile View Container */}
-        <div className="fixed inset-0 flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-slate-50 dark:bg-slate-900 md:hidden">
+        <div className="mobile-safe-frame fixed flex min-h-0 flex-col overflow-hidden bg-slate-50 dark:bg-slate-900 md:hidden">
           
           {/* Mobile Drawer */}
           {mobileMenuOpen && (
@@ -242,7 +247,7 @@ function App() {
                     </button>
                   </div>
                 </div>
-                <nav className="flex-1 min-h-0 overflow-y-auto px-5 py-5">
+                <nav className="mobile-scroll-region flex-1 min-h-0 overflow-y-auto px-5 py-5">
                   {mobileDrawerTabs.map((tab, index) => (
                     <div key={tab.id}>
                       <button
@@ -276,11 +281,11 @@ function App() {
             <div className="animate-fade-in flex min-h-full flex-col pt-1">
               {activeTab === 'system' && <DashboardTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
               {activeTab === 'transactions' && <TransactionsTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
-              {activeTab === 'savings' && <SavingsTab />}
-              {activeTab === 'budgets' && <BudgetsTab />}
-              {activeTab === 'accounts' && <AccountsTab />}
-              {activeTab === 'categories' && <CategoriesTab />}
-              {activeTab === 'debts' && <DebtsTab />}
+              {activeTab === 'savings' && <SavingsTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
+              {activeTab === 'budgets' && <BudgetsTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
+              {activeTab === 'accounts' && <AccountsTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
+              {activeTab === 'categories' && <CategoriesTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
+              {activeTab === 'debts' && <DebtsTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
               {activeTab === 'chat' && <ChatTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
               {activeTab === 'profile' && <MobileProfilePanel onLogout={handleLogout} onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
             </div>

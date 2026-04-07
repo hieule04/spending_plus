@@ -35,6 +35,8 @@ body {
   min-width: 320px;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 #root {
@@ -54,6 +56,7 @@ body {
 html {
   height: 100dvh;
   height: -webkit-fill-available;
+  min-height: -webkit-fill-available;
 }
 
 .chart-surface {

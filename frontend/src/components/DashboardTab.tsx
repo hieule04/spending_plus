@@ -26,6 +26,9 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
   const [period, setPeriod] = useState<string>("month");
   const [refDate, setRefDate] = useState<Date>(new Date());
   const [activeChart, setActiveChart] = useState<"ratio" | "trend">("ratio");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+  const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
 
   const periodOptions = [
     { value: 'all', label: t('db.period.all') },
@@ -59,6 +62,10 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
     return () => window.removeEventListener("refresh_transactions", handleRefresh);
   }, [period, refDate]);
 
+  useEffect(() => {
+    setShowDatePicker(false);
+  }, [period]);
+
   // const formatCurrency = (value: number) => new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US', { 
   //   style: 'currency', 
   //   currency: 'VND' 
@@ -88,6 +95,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
     else if (period === "month") newDate.setMonth(newDate.getMonth() - 1);
     else if (period === "year") newDate.setFullYear(newDate.getFullYear() - 1);
     setRefDate(newDate);
+    setPickerYear(newDate.getFullYear());
   };
 
   const handleNext = () => {
@@ -97,6 +105,275 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
     else if (period === "month") newDate.setMonth(newDate.getMonth() + 1);
     else if (period === "year") newDate.setFullYear(newDate.getFullYear() + 1);
     setRefDate(newDate);
+    setPickerYear(newDate.getFullYear());
+  };
+
+  const handleSelectMonth = (monthIndex: number) => {
+    const nextDate = new Date(refDate);
+    nextDate.setFullYear(pickerYear, monthIndex, 1);
+    setRefDate(nextDate);
+    setShowDatePicker(false);
+  };
+
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const getWeekStart = (value: Date) => {
+    const date = new Date(value);
+    const day = date.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    date.setDate(date.getDate() + diffToMonday);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+
+  const isSameWeek = (a: Date, b: Date) => isSameDay(getWeekStart(a), getWeekStart(b));
+
+  const handleSelectDay = (value: Date) => {
+    const nextDate = new Date(value);
+    nextDate.setHours(0, 0, 0, 0);
+    setRefDate(nextDate);
+    setPickerYear(nextDate.getFullYear());
+    setPickerMonth(nextDate.getMonth());
+    setShowDatePicker(false);
+  };
+
+  const handleSelectWeek = (value: Date) => {
+    const nextDate = getWeekStart(value);
+    setRefDate(nextDate);
+    setPickerYear(nextDate.getFullYear());
+    setPickerMonth(nextDate.getMonth());
+    setShowDatePicker(false);
+  };
+
+  const handleSelectYear = (year: number) => {
+    const nextDate = new Date(year, 0, 1);
+    setRefDate(nextDate);
+    setPickerYear(year);
+    setPickerMonth(0);
+    setShowDatePicker(false);
+  };
+
+  const getCalendarWeeks = (year: number, month: number) => {
+    const firstOfMonth = new Date(year, month, 1);
+    const start = getWeekStart(firstOfMonth);
+    return Array.from({ length: 6 }, (_, weekIndex) =>
+      Array.from({ length: 7 }, (_, dayIndex) => {
+        const date = new Date(start);
+        date.setDate(start.getDate() + weekIndex * 7 + dayIndex);
+        return date;
+      })
+    );
+  };
+
+  const monthOptions = Array.from({ length: 12 }, (_, index) => {
+    const monthDate = new Date(pickerYear, index, 1);
+    return {
+      index,
+      label: monthDate.toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", { month: "long" }),
+    };
+  });
+
+  const calendarWeeks = getCalendarWeeks(pickerYear, pickerMonth);
+  const weekdayLabels = Array.from({ length: 7 }, (_, index) => {
+    const baseDate = new Date(2024, 0, 1 + index);
+    return baseDate.toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", { weekday: "short" });
+  });
+  const yearOptions = Array.from({ length: 12 }, (_, index) => pickerYear - 4 + index);
+
+  const renderDatePicker = () => {
+    if (!showDatePicker || period === "all") return null;
+
+    if (period === "day") {
+      return (
+        <div className="md:hidden rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+          <div className="mb-4 flex items-center justify-between">
+            <button type="button" onClick={() => {
+              const next = new Date(pickerYear, pickerMonth - 1, 1);
+              setPickerYear(next.getFullYear());
+              setPickerMonth(next.getMonth());
+            }} className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all" aria-label="Previous month">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <p className="text-sm font-black text-slate-900 dark:text-white">
+              {new Date(pickerYear, pickerMonth, 1).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", { month: "long", year: "numeric" })}
+            </p>
+            <button type="button" onClick={() => {
+              const next = new Date(pickerYear, pickerMonth + 1, 1);
+              setPickerYear(next.getFullYear());
+              setPickerMonth(next.getMonth());
+            }} className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all" aria-label="Next month">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+          <div className="mb-2 grid grid-cols-7 gap-2">
+            {weekdayLabels.map((label) => (
+              <span key={label} className="text-center text-[11px] font-black uppercase text-slate-400 dark:text-slate-500">{label}</span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {calendarWeeks.flat().map((date) => {
+              const isCurrentMonth = date.getMonth() === pickerMonth;
+              const isSelected = isSameDay(date, refDate);
+              return (
+                <button
+                  key={date.toISOString()}
+                  type="button"
+                  onClick={() => handleSelectDay(date)}
+                  className={`flex aspect-square items-center justify-center rounded-2xl text-sm font-bold transition-colors ${
+                    isSelected
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                      : isCurrentMonth
+                        ? "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:bg-slate-900"
+                        : "bg-slate-50 text-slate-400 dark:bg-slate-900/30 dark:text-slate-600"
+                  }`}
+                >
+                  {date.getDate()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    if (period === "week") {
+      return (
+        <div className="md:hidden rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+          <div className="mb-4 flex items-center justify-between">
+            <button type="button" onClick={() => {
+              const next = new Date(pickerYear, pickerMonth - 1, 1);
+              setPickerYear(next.getFullYear());
+              setPickerMonth(next.getMonth());
+            }} className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all" aria-label="Previous month">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <p className="text-sm font-black text-slate-900 dark:text-white">
+              {new Date(pickerYear, pickerMonth, 1).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", { month: "long", year: "numeric" })}
+            </p>
+            <button type="button" onClick={() => {
+              const next = new Date(pickerYear, pickerMonth + 1, 1);
+              setPickerYear(next.getFullYear());
+              setPickerMonth(next.getMonth());
+            }} className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all" aria-label="Next month">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+          <div className="mb-2 grid grid-cols-7 gap-2">
+            {weekdayLabels.map((label) => (
+              <span key={label} className="text-center text-[11px] font-black uppercase text-slate-400 dark:text-slate-500">{label}</span>
+            ))}
+          </div>
+          <div className="space-y-2">
+            {calendarWeeks.map((week) => {
+              const isSelected = week.some((date) => isSameWeek(date, refDate));
+              return (
+                <button
+                  key={week[0].toISOString()}
+                  type="button"
+                  onClick={() => handleSelectWeek(week[0])}
+                  className={`grid w-full grid-cols-7 gap-2 rounded-2xl p-2 text-sm font-bold transition-colors ${
+                    isSelected
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:bg-slate-900"
+                  }`}
+                >
+                  {week.map((date) => {
+                    const isCurrentMonth = date.getMonth() === pickerMonth;
+                    return (
+                      <span key={date.toISOString()} className={`flex aspect-square items-center justify-center rounded-xl ${!isSelected && !isCurrentMonth ? "text-slate-400 dark:text-slate-600" : ""}`}>
+                        {date.getDate()}
+                      </span>
+                    );
+                  })}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    if (period === "month") {
+      return (
+        <div className="md:hidden rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+          <div className="mb-4 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setPickerYear((year) => year - 1)}
+              className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all"
+              aria-label="Previous year"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <p className="text-sm font-black text-slate-900 dark:text-white">{pickerYear}</p>
+            <button
+              type="button"
+              onClick={() => setPickerYear((year) => year + 1)}
+              className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all"
+              aria-label="Next year"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {monthOptions.map((month) => {
+              const isSelected = refDate.getFullYear() === pickerYear && refDate.getMonth() === month.index;
+              return (
+                <button
+                  key={month.index}
+                  type="button"
+                  onClick={() => handleSelectMonth(month.index)}
+                  className={`rounded-2xl px-3 py-3 text-sm font-bold capitalize transition-colors ${
+                    isSelected
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:bg-slate-900"
+                  }`}
+                >
+                  {month.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="md:hidden rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+        <div className="mb-4 flex items-center justify-between">
+          <button type="button" onClick={() => setPickerYear((year) => year - 12)} className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all" aria-label="Previous years">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+          <p className="text-sm font-black text-slate-900 dark:text-white">{yearOptions[0]} - {yearOptions[yearOptions.length - 1]}</p>
+          <button type="button" onClick={() => setPickerYear((year) => year + 12)} className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all" aria-label="Next years">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {yearOptions.map((year) => {
+            const isSelected = refDate.getFullYear() === year;
+            return (
+              <button
+                key={year}
+                type="button"
+                onClick={() => handleSelectYear(year)}
+                className={`rounded-2xl px-3 py-3 text-sm font-bold transition-colors ${
+                  isSelected
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:bg-slate-900"
+                }`}
+              >
+                {year}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   const formatCurrentPeriod = () => {
@@ -181,31 +458,42 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
 
       {/* Mobile Date Navigator */}
       {period !== 'all' && (
-        <div className="md:hidden flex items-center justify-between px-2">
-          <button 
-            onClick={handlePrev} 
-            className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
-          </button>
-          
-          <div className="flex flex-col items-center">
-            <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-              {formatCurrentPeriod()}
-            </span>
-            {/* Display "Hôm nay" button if far from now? Optional */}
-          </div>
+        <>
+          <div className="md:hidden flex items-center justify-between px-2">
+            <button 
+              onClick={handlePrev} 
+              className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            
+            <div className="flex flex-col items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setPickerYear(refDate.getFullYear());
+                  setPickerMonth(refDate.getMonth());
+                  setShowDatePicker((open) => !open);
+                }}
+                className="inline-flex items-center gap-1 text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white"
+              >
+                <span>{formatCurrentPeriod()}</span>
+                <svg className={`h-4 w-4 transition-transform ${showDatePicker ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 9-7 7-7-7"></path></svg>
+              </button>
+            </div>
 
-          <button 
-            onClick={handleNext} 
-            className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
-          </button>
-        </div>
+            <button 
+              onClick={handleNext} 
+              className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 active:scale-95 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+          {renderDatePicker()}
+        </>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-2 hide-scrollbar md:overflow-hidden">
+      <div className="mobile-scroll-region flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-2 hide-scrollbar md:overflow-hidden">
       {loading && !stats ? (
         <div className={`flex justify-center items-center h-48 p-6 rounded-2xl ${cardClass}`}>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>

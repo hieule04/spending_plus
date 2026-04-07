@@ -14,6 +14,7 @@ import {
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
 import CurrencyInput from "./CurrencyInput";
+import MobilePageHeader from "./MobilePageHeader";
 import { useLanguage } from "../context/LanguageContext";
 
 type DebtItem = {
@@ -39,7 +40,19 @@ const normalizeMoney = (value: unknown) => {
   return String(value ?? "").replace(/\.0+$/, "").replace(/[^\d]/g, "");
 };
 
-export default function DebtsTab() {
+const getLoanApiErrorMessage = (error: unknown, fallback: string) => {
+  const message = error instanceof Error ? error.message : "";
+  if (/api route not found|not found/i.test(message)) {
+    return "Phiên bản backend hiện tại chưa hỗ trợ API khoản cho vay. Hãy cập nhật hoặc build lại backend.";
+  }
+  return message || fallback;
+};
+
+interface DebtsTabProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export default function DebtsTab({ onOpenMobileMenu }: DebtsTabProps) {
   const { t, language, formatAmount } = useLanguage();
   const [debts, setDebts] = useState<DebtItem[]>([]);
   const [loans, setLoans] = useState<LoanItem[]>([]);
@@ -94,7 +107,12 @@ export default function DebtsTab() {
         throw accountResult.reason;
       }
 
-      setLoans(loanResult.status === "fulfilled" ? loanResult.value || [] : []);
+      if (loanResult.status === "fulfilled") {
+        setLoans(loanResult.value || []);
+      } else {
+        setLoans([]);
+        setMessage({ text: getLoanApiErrorMessage(loanResult.reason, t("debt.msg.load_error")), type: "error" });
+      }
     } catch (err: any) {
       setMessage({ text: err.message || t("debt.msg.load_error"), type: "error" });
     } finally {
@@ -197,7 +215,7 @@ export default function DebtsTab() {
       setIsLoanModalOpen(false);
       fetchData();
     } catch (err: any) {
-      setMessage({ text: err.message || t("debt.msg.error"), type: "error" });
+      setMessage({ text: getLoanApiErrorMessage(err, t("debt.msg.error")), type: "error" });
     } finally {
       setIsSubmitting(false);
       window.setTimeout(() => setMessage(null), 3000);
@@ -267,28 +285,29 @@ export default function DebtsTab() {
 
   return (
     <div className="w-full p-2">
+      <MobilePageHeader onOpenMobileMenu={onOpenMobileMenu} className="mb-4" />
       <div className="mb-8">
         <h2 className={`text-4xl font-extrabold tracking-tight ${title}`}>{t("debt.title")}</h2>
         <p className={`mt-2 ${sub}`}>{t("debt.subtitle")}</p>
       </div>
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex rounded-2xl bg-slate-100 p-1 dark:bg-slate-900/60">
+      <div className="mb-6 flex flex-wrap items-center gap-3 sm:justify-between">
+        <div className="inline-flex flex-1 rounded-2xl bg-slate-100 p-1 dark:bg-slate-900/60 sm:flex-none">
           <button
             type="button"
             onClick={() => setActiveSection("debts")}
-            className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+            className={`flex-1 rounded-xl px-3 py-1.5 text-xs font-bold transition sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${
               activeSection === "debts"
                 ? "bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400"
                 : "text-slate-500 dark:text-slate-400"
             }`}
           >
-            {t("debt.title")}
+            {language === "vi" ? "Dư nợ" : t("debt.title")}
           </button>
           <button
             type="button"
             onClick={() => setActiveSection("loans")}
-            className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+            className={`flex-1 rounded-xl px-3 py-1.5 text-xs font-bold transition sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${
               activeSection === "loans"
                 ? "bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400"
                 : "text-slate-500 dark:text-slate-400"
@@ -300,9 +319,15 @@ export default function DebtsTab() {
 
         <button
           onClick={() => (activeSection === "debts" ? openDebtModal() : openLoanModal())}
-          className={primaryButton}
+          className={`${primaryButton} inline-flex h-10 w-10 items-center justify-center rounded-xl whitespace-nowrap text-2xl leading-none md:h-auto md:w-auto md:rounded-2xl md:px-4 md:py-2 md:text-sm`}
+          aria-label={activeSection === "debts" ? t("debt.add") : t("loan.add")}
         >
-          {activeSection === "debts" ? t("debt.add") : t("loan.add")}
+          <span className="md:hidden">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
+          <span className="hidden md:inline">{activeSection === "debts" ? t("debt.add") : t("loan.add")}</span>
         </button>
       </div>
 
@@ -317,7 +342,18 @@ export default function DebtsTab() {
             {debts.length === 0 ? (
               <div className={`${card} flex flex-col items-center justify-center py-20 text-center`}>
                 <p className={`mb-4 text-lg font-bold ${title}`}>{t("debt.no_debts")}</p>
-                <button onClick={() => openDebtModal()} className={primaryButtonWide}>{t("debt.start")}</button>
+                <button
+                  onClick={() => openDebtModal()}
+                  className={`${primaryButtonWide} inline-flex h-12 w-12 items-center justify-center rounded-xl text-3xl leading-none md:h-auto md:w-auto md:px-6 md:py-3 md:text-base`}
+                  aria-label={t("debt.start")}
+                >
+                  <span className="md:hidden">
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 5v14M5 12h14" />
+                    </svg>
+                  </span>
+                  <span className="hidden md:inline">{t("debt.start")}</span>
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -369,7 +405,18 @@ export default function DebtsTab() {
             {loans.length === 0 ? (
               <div className={`${card} flex flex-col items-center justify-center py-20 text-center`}>
                 <p className={`mb-4 text-lg font-bold ${title}`}>{t("loan.no_loans")}</p>
-                <button onClick={() => openLoanModal()} className={primaryButtonWide}>{t("loan.start")}</button>
+                <button
+                  onClick={() => openLoanModal()}
+                  className={`${primaryButtonWide} inline-flex h-12 w-12 items-center justify-center rounded-xl text-3xl leading-none md:h-auto md:w-auto md:px-6 md:py-3 md:text-base`}
+                  aria-label={t("loan.start")}
+                >
+                  <span className="md:hidden">
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 5v14M5 12h14" />
+                    </svg>
+                  </span>
+                  <span className="hidden md:inline">{t("loan.start")}</span>
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { API_BASE_URL } from "../config/env";
+import { clearAuthSession, getValidStoredToken } from "./auth";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -8,12 +9,23 @@ export const api = axios.create({
 
 // Interceptor: tự động gắn Bearer token vào mỗi request
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
+  const token = getValidStoredToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error instanceof AxiosError && error.response?.status === 401) {
+      clearAuthSession();
+      window.dispatchEvent(new Event("user_logout"));
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Hàm hỗ trợ xử lý lỗi từ FastAPI
 const handleApiError = (error: unknown, defaultMessage: string): never => {
@@ -143,9 +155,15 @@ export const deleteCategory = async (id: string) => {
 // 4. Transactions
 // ==========================================
 
-export const listTransactions = async () => {
+export const listTransactions = async (params?: { startDate?: string; endDate?: string; limit?: number }) => {
   try {
-    const response = await api.get("/api/transactions/");
+    const response = await api.get("/api/transactions/", {
+      params: {
+        start_date: params?.startDate,
+        end_date: params?.endDate,
+        limit: params?.limit ?? 200,
+      },
+    });
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể tải danh sách giao dịch.");
@@ -179,7 +197,7 @@ export const updateTransaction = async (id: string, data: {
   date?: string;
   note?: string;
   account_id?: string;
-  category_id?: string;
+  category_id?: string | null;
   debt_id?: string | null;
 }) => {
   try {

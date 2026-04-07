@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { loginUser } from "../service/api";
+import { setAuthSession } from "../service/auth";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -15,11 +16,10 @@ export default function LoginForm() {
       const userData = await loginUser({ email, password });
       setMessage({ text: "Đăng nhập thành công!", type: "success" });
       if (userData && userData.user && userData.user.id) {
-        localStorage.setItem("user_id", userData.user.id);
-        localStorage.setItem("access_token", userData.access_token);
+        setAuthSession(userData.access_token, userData.user.id);
         window.dispatchEvent(new Event("user_login"));
       } else if (userData && userData.id) { 
-        localStorage.setItem("user_id", userData.id);
+        setAuthSession(userData.access_token, userData.id);
         window.dispatchEvent(new Event("user_login"));
       }
     } catch (error: any) {

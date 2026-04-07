@@ -6,26 +6,44 @@ import {
 import FancySelect from "./FancySelect";
 import ConfirmModal from "./ConfirmModal";
 import CurrencyInput from "./CurrencyInput";
+import MobilePageHeader from "./MobilePageHeader";
 import { useLanguage } from "../context/LanguageContext";
 
-export default function SavingsTab() {
+type SavingsGoal = {
+  id: string;
+  name: string;
+  target_amount: number | string;
+  current_amount: number | string;
+  is_completed?: boolean;
+};
+
+const toNumber = (value: number | string | null | undefined): number => {
+  const normalized = typeof value === "string" ? Number(value) : value;
+  return typeof normalized === "number" && Number.isFinite(normalized) ? normalized : 0;
+};
+
+interface SavingsTabProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export default function SavingsTab({ onOpenMobileMenu }: SavingsTabProps) {
   const { t, formatAmount } = useLanguage();
   
-  const [goals, setGoals] = useState<any[]>([]);
+  const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   
   // Create/Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<any>(null);
+  const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   
   // Action Modal state (Deposit/Withdraw)
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [actionType, setActionType] = useState<'deposit' | 'withdraw'>('deposit');
-  const [selectedGoal, setSelectedGoal] = useState<any>(null);
+  const [selectedGoal, setSelectedGoal] = useState<SavingsGoal | null>(null);
   const [amount, setAmount] = useState("");
   const [selectedAccount, setSelectedAccount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +68,7 @@ export default function SavingsTab() {
     return () => window.removeEventListener("refresh_transactions", fetchData);
   }, [t]);
 
-  const handleOpenModal = (goal: any = null) => {
+  const handleOpenModal = (goal: SavingsGoal | null = null) => {
     setEditingGoal(goal);
     setName(goal ? goal.name : "");
     setTargetAmount(goal ? goal.target_amount.toString() : "");
@@ -85,7 +103,7 @@ export default function SavingsTab() {
     }
   };
 
-  const openActionModal = (goal: any, type: 'deposit' | 'withdraw') => {
+  const openActionModal = (goal: SavingsGoal, type: 'deposit' | 'withdraw') => {
     setSelectedGoal(goal);
     setActionType(type);
     setAmount("");
@@ -138,6 +156,7 @@ export default function SavingsTab() {
 
   return (
     <div className="h-full flex flex-col relative w-full h-full p-2">
+      <MobilePageHeader onOpenMobileMenu={onOpenMobileMenu} className="mb-4" />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h2 className={`text-4xl font-extrabold tracking-tight ${textTitleClass}`}>{t('sv.title')}</h2>
@@ -162,16 +181,24 @@ export default function SavingsTab() {
           <p className={`text-lg font-bold mb-4 ${textTitleClass}`}>{t('sv.no_goals')}</p>
           <button 
             onClick={() => handleOpenModal()}
-            className={`px-6 py-3 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 bg-blue-600 hover:bg-blue-500 text-white shadow-lg`}
+            className={`inline-flex h-12 w-12 items-center justify-center rounded-xl font-bold transition-all hover:scale-105 active:scale-95 bg-blue-600 hover:bg-blue-500 text-white shadow-lg md:h-auto md:w-auto md:px-6 md:py-3`}
+            aria-label={t('sv.start')}
           >
-            {t('sv.start')}
+            <span className="md:hidden">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 5v14M5 12h14" />
+              </svg>
+            </span>
+            <span className="hidden md:inline">{t('sv.start')}</span>
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
           {goals.map((goal) => {
-            const pct = (goal.current_amount / goal.target_amount) * 100;
-            const isCompleted = goal.current_amount >= goal.target_amount;
+            const currentAmount = toNumber(goal.current_amount);
+            const targetAmountValue = toNumber(goal.target_amount);
+            const pct = targetAmountValue > 0 ? (currentAmount / targetAmountValue) * 100 : 0;
+            const isCompleted = goal.is_completed ?? currentAmount >= targetAmountValue;
             const goldCardClass = isCompleted ? "bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800/50 shadow-amber-200/50" : "";
             const cardTitleClass = isCompleted ? "text-amber-900 dark:text-amber-400" : textTitleClass;
             const cardSubClass = isCompleted ? "text-amber-700 dark:text-amber-600" : textSubClass;
@@ -198,8 +225,8 @@ export default function SavingsTab() {
                 <div className="flex justify-between items-end mb-2">
                   <div className={`font-semibold ${cardSubClass} text-sm`}>
                     <span className={`text-lg ${cardTitleClass}`}>
-                      {formatAmount(goal.current_amount)}
-                    </span> / {formatAmount(goal.target_amount)}
+                      {formatAmount(currentAmount)}
+                    </span> / {formatAmount(targetAmountValue)}
                   </div>
                   <div className={`text-xs font-black ${isCompleted ? 'text-amber-600' : 'text-blue-500'}`}>
                     {Math.min(pct, 100).toFixed(0)}%
@@ -230,13 +257,19 @@ export default function SavingsTab() {
           {/* Add New Savings Goal Card */}
           <button 
             onClick={() => handleOpenModal()}
-            className={`bg-transparent border-dashed border-2 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-3xl flex flex-col items-center justify-center min-h-[220px] transition-all group`}
+            className={`bg-transparent border-dashed border-2 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-3xl flex flex-col items-center justify-center min-h-[120px] md:min-h-[220px] transition-all group`}
+            aria-label={t('sv.add_new')}
           >
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-all group-hover:scale-110 group-hover:rotate-90 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`}>
+            <div className={`hidden md:flex w-14 h-14 rounded-full items-center justify-center mb-4 transition-all group-hover:scale-110 group-hover:rotate-90 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`}>
                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             </div>
-            <span className={`font-black tracking-wide text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400`}>
+            <span className={`hidden md:inline font-black tracking-wide text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400`}>
               {t('sv.add_new')}
+            </span>
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 md:hidden">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 5v14M5 12h14" />
+              </svg>
             </span>
           </button>
         </div>

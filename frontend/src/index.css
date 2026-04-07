@@ -6,6 +6,13 @@
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --mobile-bottom-nav-height: 4.25rem;
+  --app-safe-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html, body, #root {
@@ -14,23 +21,26 @@ html, body, #root {
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
 }
 
 html {
   height: 100dvh;
   min-height: 100dvh;
   height: -webkit-fill-available;
+  min-height: -webkit-fill-available;
 }
 
 body,
 #root {
   min-height: 100dvh;
+  min-height: var(--app-safe-height);
   min-height: -webkit-fill-available;
 }
 
 body {
   overscroll-behavior-y: none;
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
 }
 
 .font-wordmark {
@@ -38,8 +48,7 @@ body {
 }
 
 .mobile-shell {
-  padding-top: var(--safe-area-top);
-  min-height: 100dvh;
+  min-height: 100%;
 }
 
 .mobile-content {
@@ -48,6 +57,10 @@ body {
   min-height: 100%;
   flex-direction: column;
   padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--safe-area-bottom));
+}
+
+.mobile-scroll-region {
+  padding-bottom: calc(1rem + var(--safe-area-bottom));
 }
 
 /* Bottom navigation safe-area handling for iPhone standalone */
@@ -69,6 +82,7 @@ body {
 .mobile-drawer-backdrop,
 .mobile-drawer-panel {
   min-height: 100dvh;
+  min-height: var(--app-safe-height);
   min-height: -webkit-fill-available;
 }
 
@@ -79,6 +93,7 @@ body {
 
 .mobile-drawer-panel {
   height: 100dvh;
+  height: var(--app-safe-height);
   padding-top: var(--safe-area-top);
   padding-bottom: var(--safe-area-bottom);
   box-sizing: border-box;
@@ -97,4 +112,18 @@ canvas {
 .recharts-wrapper,
 .recharts-surface {
   max-width: 100%;
+}
+
+.safe-viewport-shell {
+  min-height: var(--app-safe-height);
+  height: var(--app-safe-height);
+}
+
+.mobile-safe-frame {
+  top: var(--safe-area-top);
+  right: 0;
+  bottom: var(--safe-area-bottom);
+  left: 0;
+  min-height: var(--app-safe-height);
+  height: var(--app-safe-height);
 }
