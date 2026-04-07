@@ -122,7 +122,7 @@ function App() {
 
   if (!isLoggedIn) {
     return (
-      <div className={`app-shell overscroll-none flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
+      <div className={`app-shell overscroll-none flex min-h-0 flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ease-in-out bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
         <div className={`max-w-md w-full rounded-3xl shadow-2xl p-8 text-center relative animate-fade-in bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
           <header className={`mb-8 ${authMode !== 'none' ? 'opacity-80 scale-95 transition-all' : 'transition-all scale-100'}`}>
             <AppWordmark size="lg" className="justify-center pb-2 mb-2" />
@@ -204,17 +204,17 @@ function App() {
   }
 
   return (
-    <div className={`app-shell overflow-hidden flex flex-col items-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
-      <div className="w-full max-w-[1600px] h-full flex flex-col md:flex-row relative md:gap-4 md:p-6 lg:p-8">
+    <div className={`app-shell flex min-h-0 flex-col items-center overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white`}>
+      <div className="relative flex min-h-0 w-full max-w-[1600px] flex-1 flex-col md:grid md:grid-cols-[16rem_minmax(0,1fr)] md:gap-4 md:p-6 lg:p-8">
 
         {/* Mobile View Container */}
-        <div className="md:hidden fixed inset-0 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900">
+        <div className="fixed inset-0 flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-slate-50 dark:bg-slate-900 md:hidden">
           
           {/* Mobile Drawer */}
           {mobileMenuOpen && (
             <div className="mobile-drawer-layer fixed inset-0 z-[60] flex">
               <div className="mobile-drawer-backdrop fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setMobileMenuOpen(false)} />
-              <div className="mobile-drawer-panel relative flex w-[19rem] max-w-[86vw] flex-col overflow-hidden rounded-r-[2rem] border-r border-slate-200/50 dark:border-slate-700/60 bg-white/95 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.97),rgba(15,23,42,0.92))] shadow-[0_30px_80px_rgba(15,23,42,0.1)] dark:shadow-[0_30px_80px_rgba(15,23,42,0.35)] backdrop-blur-xl animate-slide-in-left">
+              <div className="mobile-drawer-panel relative flex w-[19rem] max-w-[86vw] min-h-0 flex-col overflow-hidden rounded-r-[2rem] border-r border-slate-200/50 dark:border-slate-700/60 bg-white/95 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.97),rgba(15,23,42,0.92))] shadow-[0_30px_80px_rgba(15,23,42,0.1)] dark:shadow-[0_30px_80px_rgba(15,23,42,0.35)] backdrop-blur-xl animate-slide-in-left">
                 <div className="relative overflow-hidden border-b border-slate-100 dark:border-slate-700/70 px-5 pb-5 pt-4">
                   <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.1),_transparent_62%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_48%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.28),_transparent_62%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.22),_transparent_48%)]" />
                   <div className="relative flex items-start justify-between gap-3">
@@ -242,7 +242,7 @@ function App() {
                     </button>
                   </div>
                 </div>
-                <nav className="flex-1 overflow-y-auto px-5 py-5">
+                <nav className="flex-1 min-h-0 overflow-y-auto px-5 py-5">
                   {mobileDrawerTabs.map((tab, index) => (
                     <div key={tab.id}>
                       <button
@@ -273,7 +273,7 @@ function App() {
           )}
 
           <MobileLayout activeTab={activeTab} onTabChange={setActiveTab}>
-            <div className="animate-fade-in h-full pt-1">
+            <div className="animate-fade-in flex min-h-full flex-col pt-1">
               {activeTab === 'system' && <DashboardTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
               {activeTab === 'transactions' && <TransactionsTab onOpenMobileMenu={() => setMobileMenuOpen(true)} />}
               {activeTab === 'savings' && <SavingsTab />}
@@ -288,7 +288,7 @@ function App() {
         </div>
 
         {/* Desktop Left Sidebar */}
-        <aside className={`hidden md:flex w-64 flex-none rounded-3xl shadow-sm flex-col p-6 z-30 relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
+        <aside className={`relative z-30 hidden min-h-0 w-64 flex-none flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 md:flex`}>
           <div className="mb-10">
             <div>
               <AppWordmark size="md" className="pb-1" />
@@ -296,7 +296,7 @@ function App() {
             </div>
           </div>
 
-          <nav className="flex-1 space-y-2">
+          <nav className="flex-1 space-y-2 overflow-y-auto pr-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -318,9 +318,9 @@ function App() {
         </aside>
 
         {/* Main Content Pane (Desktop) */}
-        <main className={`hidden md:flex flex-1 overflow-auto rounded-3xl shadow-inner flex flex-col relative z-20 bg-white/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/50`}>
-          <div className="flex-1 relative overflow-auto p-4 sm:p-6 lg:p-8">
-            <div className="animate-fade-in h-full">
+        <main className={`relative z-20 hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200/50 bg-white/50 shadow-inner dark:border-slate-700/50 dark:bg-slate-800/30 md:flex`}>
+          <div className="relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
+            <div className="animate-fade-in flex min-h-full flex-col">
               {activeTab === 'system' && <DashboardTab />}
               {activeTab === 'transactions' && <TransactionsTab />}
               {activeTab === 'savings' && <SavingsTab />}
