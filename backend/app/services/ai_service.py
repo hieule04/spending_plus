@@ -14,8 +14,8 @@ from datetime import datetime
 from decimal import Decimal
 
 from google import genai
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract
 
 from app.core.config import settings
 from app import models, schemas
@@ -27,115 +27,26 @@ from app.crud import transactions as crud_txn
 # ============================================================
 
 SYSTEM_INSTRUCTION_BASE = """\
-Bạn là trợ lý tài chính của ứng dụng Spending Plus.
-Hãy trả lời ngắn gọn, lịch sự.
-Bạn có thể tư vấn về quản lý chi tiêu, tiết kiệm, ngân sách và đầu tư cá nhân.
-Nếu câu hỏi không liên quan đến tài chính, hãy nhẹ nhàng hướng người dùng quay lại chủ đề.
-Nếu người dùng hỏi về số dư, chi tiêu hoặc tư vấn, hãy dựa vào dữ liệu thực tế ở trên để trả lời chính xác.
-Không được bịa đặt con số.
+Bạn là bộ phân tích giao dịch của ứng dụng Spending Plus.
+Nhiệm vụ duy nhất của bạn là đọc tin nhắn hiện tại của người dùng và bóc tách thông tin để tạo giao dịch mới nếu có thể.
 
-=== QUY TẮC TỰ ĐỘNG NHẬP GIAO DỊCH ===
-Nếu người dùng có ý định thêm một giao dịch mới (ví dụ: 'mới tiêu 50k ăn phở', 'vừa ăn trưa 80 nghìn', 'thu về 5 triệu lương', 'hôm qua mua sách 120k'), bạn PHẢI trả về **chỉ duy nhất một JSON hợp lệ** (KHÔNG có markdown code fences, KHÔNG có backtick) theo đúng cấu trúc sau:
+Bạn PHẢI luôn trả về chỉ duy nhất một JSON hợp lệ, không markdown, không backtick, theo một trong 2 cấu trúc sau:
 
-{"action": "create_transaction", "transaction_data": {"amount": <số tiền VNĐ, kiểu số nguyên>, "type": "<expense hoặc income>", "category_name": "<tên danh mục phù hợp nhất từ danh sách bên dưới>", "note": "<ghi chú ngắn gọn>", "date": "<YYYY-MM-DD>"}, "message": "<câu trả lời thân thiện xác nhận giao dịch>"}
+{"action": "create_transaction", "transaction_data": {"amount": <số tiền VNĐ, kiểu số nguyên>, "type": "<expense hoặc income>", "category_name": "<tên danh mục ngắn gọn, phù hợp nhất>", "note": "<ghi chú ngắn gọn>", "date": "<YYYY-MM-DD>"}, "message": "<câu xác nhận ngắn gọn>"}
 
-Nếu người dùng KHÔNG có ý định thêm giao dịch (chỉ hỏi, trò chuyện, xin tư vấn...), bạn PHẢI trả về JSON:
+{"action": "none", "transaction_data": null, "message": "<câu trả lời ngắn gọn nói rằng chưa đủ dữ liệu để tạo giao dịch hoặc tin nhắn không phải yêu cầu ghi giao dịch>"}
 
-{"action": "none", "transaction_data": null, "message": "<câu trả lời thông thường>"}
-
-LƯU Ý QUAN TRỌNG:
-- Luôn trả về JSON thuần túy, KHÔNG BAO GIỜ bọc trong ```json ... ``` hay bất kỳ markdown nào.
-- Nếu người dùng nói 'k', 'nghìn', hoặc 'ngàn' thì nhân với 1000. Nếu nói 'triệu' hoặc 'tr' thì nhân với 1000000.
-- Nếu không nói rõ ngày, dùng ngày hôm nay.
-- Nếu nói 'hôm qua', tính lùi 1 ngày. 'Hôm kia' tính lùi 2 ngày.
-- Nếu không rõ đó là thu hay chi, mặc định là 'expense'.
-- Chọn category_name gần nhất từ danh sách danh mục bên dưới. Nếu không khớp, dùng danh mục chung nhất.
+Quy tắc bắt buộc:
+- Chỉ tập trung vào hành động tạo giao dịch từ tin nhắn hiện tại.
+- Nếu người dùng nói 'k', 'nghìn', hoặc 'ngàn' thì nhân với 1000.
+- Nếu người dùng nói 'triệu' hoặc 'tr' thì nhân với 1000000.
+- Nếu không nói rõ ngày, dùng ngày hiện tại của hệ thống được cung cấp.
+- Nếu nói 'hôm qua', tính lùi 1 ngày. Nếu nói 'hôm kia', tính lùi 2 ngày.
+- Nếu không rõ là thu hay chi, mặc định là 'expense'.
+- `category_name` phải là một tên danh mục ngắn, tự nhiên, phù hợp với nội dung tin nhắn.
+- `note` phải ngắn gọn, bám sát nội dung người dùng.
+- Nếu chưa đủ dữ liệu để tạo giao dịch, trả về action là "none".
 """
-
-
-# ============================================================
-# Helper: Lấy ngữ cảnh tài chính
-# ============================================================
-
-def get_financial_context(user_id: uuid.UUID, db: Session) -> str:
-    """Truy vấn dữ liệu tài chính của user để làm ngữ cảnh cung cấp cho AI."""
-    now = datetime.now()
-    current_month = now.month
-    current_year = now.year
-
-    # 1. Tổng số dư
-    total_balance = db.query(func.sum(models.Account.balance)).filter(
-        models.Account.user_id == user_id
-    ).scalar() or 0.0
-
-    # 2. Tổng chi tiêu tháng
-    total_expense = db.query(func.sum(models.Transaction.amount)).filter(
-        models.Transaction.user_id == user_id,
-        models.Transaction.type == 'expense',
-        extract('month', models.Transaction.date) == current_month,
-        extract('year', models.Transaction.date) == current_year
-    ).scalar() or 0.0
-
-    # 3. Mục tiêu tiết kiệm và tiến độ
-    savings_goals = db.query(models.SavingsGoal).filter(
-        models.SavingsGoal.user_id == user_id,
-        models.SavingsGoal.is_completed == False
-    ).all()
-    saving_texts = []
-    for sg in savings_goals:
-        pct = (sg.current_amount / sg.target_amount * 100) if sg.target_amount > 0 else 0
-        saving_texts.append(f'- Sổ "{sg.name}": đạt {pct:.1f}% ({float(sg.current_amount):,.0f}đ / {float(sg.target_amount):,.0f}đ)')
-    saving_str = "\n".join(saving_texts) if saving_texts else "Không có"
-
-    # 4. Các khoản nợ
-    debts = db.query(models.Debt).filter(
-        models.Debt.user_id == user_id,
-        models.Debt.remaining_amount > 0
-    ).all()
-    debt_texts = []
-    for d in debts:
-        debt_texts.append(f'- Nợ "{d.creditor_name}": còn nợ {float(d.remaining_amount):,.0f}đ, trả mỗi tháng {float(d.monthly_payment):,.0f}đ')
-    debt_str = "\n".join(debt_texts) if debt_texts else "Không có"
-
-    # 5. Ngân sách tháng này
-    budgets = db.query(models.Budget).filter(
-        models.Budget.user_id == user_id,
-        models.Budget.month == current_month,
-        models.Budget.year == current_year
-    ).all()
-    total_budget_limit = sum(b.amount_limit for b in budgets) or 0.0
-    remaining_budget = float(total_budget_limit) - float(total_expense)
-
-    # 6. Danh sách danh mục
-    categories = db.query(models.Category).filter(
-        models.Category.user_id == user_id
-    ).all()
-    category_texts = []
-    for cat in categories:
-        category_texts.append(f'- "{cat.name}" (loại: {cat.type})')
-    category_str = "\n".join(category_texts) if category_texts else "Chưa có danh mục nào"
-
-    # 7. Danh sách tài khoản
-    accounts = db.query(models.Account).filter(
-        models.Account.user_id == user_id
-    ).all()
-    account_texts = []
-    for acc in accounts:
-        account_texts.append(f'- "{acc.name}" (loại: {acc.type}, số dư: {float(acc.balance):,.0f}đ)')
-    account_str = "\n".join(account_texts) if account_texts else "Chưa có tài khoản nào"
-
-    context = (
-        f"Ngày hiện tại: {now.strftime('%d/%m/%Y')}.\n\n"
-        f"Ngữ cảnh tài chính của người dùng:\n"
-        f"Tổng số dư: {float(total_balance):,.0f}đ.\n"
-        f"Đã chi tháng này ({current_month}/{current_year}): {float(total_expense):,.0f}đ.\n"
-        f"Ngân sách tháng này: {float(total_budget_limit):,.0f}đ (còn lại: {remaining_budget:,.0f}đ).\n\n"
-        f"Tiết kiệm đang theo dõi:\n{saving_str}\n\n"
-        f"Các khoản nợ đang theo dõi:\n{debt_str}\n\n"
-        f"Danh sách danh mục của người dùng:\n{category_str}\n\n"
-        f"Danh sách tài khoản của người dùng:\n{account_str}"
-    )
-    return context
 
 
 # ============================================================
@@ -300,15 +211,17 @@ class AIService:
     ) -> dict:
         """
         Xử lý tin nhắn chat:
-        1. Tạo system instruction động (ngữ cảnh tài chính + quy tắc).
+        1. Tạo system instruction tối giản từ thời gian hệ thống.
         2. Gọi Gemini.
         3. Parse JSON → nếu có action 'create_transaction' thì tự động tạo giao dịch.
         4. Trả về dict {"message": str, "transaction_created": bool}.
         """
         try:
-            # Build system instruction
-            financial_context = get_financial_context(user_id, db)
-            full_instruction = f"{financial_context}\n\n{SYSTEM_INSTRUCTION_BASE}"
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            full_instruction = (
+                f"Thời gian hệ thống hiện tại: {current_time}\n\n"
+                f"{SYSTEM_INSTRUCTION_BASE}"
+            )
 
             # Gọi Gemini
             raw_reply = await self._call_gemini(user_message, full_instruction)

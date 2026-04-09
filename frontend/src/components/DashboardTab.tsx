@@ -4,7 +4,7 @@ import MobilePageHeader from "./MobilePageHeader";
 import { getSummaryStats } from "../service/api";
 import { 
   PieChart, Pie, Cell, Tooltip as PieTooltip, Legend, 
-  XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip,
   AreaChart, Area
 } from "recharts";
 import { useLanguage } from "../context/LanguageContext";
@@ -555,15 +555,13 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
               <>
                 {stats.pie_data && stats.pie_data.length > 0 ? (
                   <div className="chart-surface mx-auto h-72 w-full max-w-[32rem] animate-fade-in">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
-                          {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
-                        </Pie>
-                        <PieTooltip content={<CustomPieTooltip />} />
-                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <PieChart responsive style={{ width: "100%", height: "100%" }}>
+                      <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
+                        {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
+                      </Pie>
+                      <PieTooltip content={<CustomPieTooltip />} />
+                      <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                    </PieChart>
                   </div>
                 ) : (
                   <div className={`flex h-72 w-full max-w-[32rem] flex-col items-center justify-center animate-fade-in ${subTextClass}`}>
@@ -581,17 +579,15 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
                         <linearGradient id="colorExpenseMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
                       </defs>
                     </svg>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
-                        <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
-                        <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
-                        <BarTooltip content={<CustomTooltip />} />
-                        <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                        <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncomeMobile)" />
-                        <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpenseMobile)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    <AreaChart responsive style={{ width: "100%", height: "100%" }} data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
+                      <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
+                      <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
+                      <BarTooltip content={<CustomTooltip />} />
+                      <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                      <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncomeMobile)" />
+                      <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpenseMobile)" />
+                    </AreaChart>
                   </div>
                 ) : (
                   <div className={`flex h-72 w-full max-w-[32rem] flex-col items-center justify-center animate-fade-in ${subTextClass}`}>
@@ -610,15 +606,13 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
 
               {stats.pie_data && stats.pie_data.length > 0 ? (
                 <div className="chart-surface mx-auto h-64 w-full max-w-[42rem] animate-fade-in md:h-full md:min-h-0 md:flex-1 xl:h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
-                        {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
-                      </Pie>
-                      <PieTooltip content={<CustomPieTooltip />} />
-                      <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <PieChart responsive style={{ width: "100%", height: "100%" }}>
+                    <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
+                      {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
+                    </Pie>
+                    <PieTooltip content={<CustomPieTooltip />} />
+                    <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                  </PieChart>
                 </div>
               ) : (
                 <div className={`flex h-64 w-full max-w-[42rem] flex-col items-center justify-center animate-fade-in ${subTextClass} md:h-full md:min-h-0 md:flex-1 xl:h-72`}>
@@ -640,17 +634,15 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
                       <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
                     </defs>
                   </svg>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
-                      <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
-                      <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
-                      <BarTooltip content={<CustomTooltip />} />
-                      <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                      <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
-                      <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  <AreaChart responsive style={{ width: "100%", height: "100%" }} data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
+                    <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
+                    <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
+                    <BarTooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                    <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
+                    <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
+                  </AreaChart>
                 </div>
               ) : (
                 <div className={`flex h-64 w-full max-w-[42rem] flex-col items-center justify-center animate-fade-in ${subTextClass} md:h-full md:min-h-0 md:flex-1 xl:h-72`}>

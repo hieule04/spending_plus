@@ -482,7 +482,7 @@ export const deleteLoan = async (id: string) => {
 
 export const sendChatMessage = async (message: string): Promise<{ reply: string; transaction_created: boolean }> => {
   try {
-    const response = await api.post("/api/chat", { message });
+    const response = await api.post("/api/chat", { message }, { timeout: 60000 });
     return response.data;
   } catch (error) {
     handleApiError(error, "Không thể gửi tin nhắn đến trợ lý AI.");
