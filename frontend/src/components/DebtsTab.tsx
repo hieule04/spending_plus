@@ -465,7 +465,7 @@ export default function DebtsTab({ onOpenMobileMenu }: DebtsTabProps) {
               </div>
               <div>
                 <label className={`mb-2 block text-sm font-bold ${sub}`}>{t("debt.due_date")}</label>
-                <FancySelect value={dueDate} onChange={setDueDate} options={Array.from({ length: 31 }, (_, i) => ({ label: `${language === "vi" ? "NgÃ y" : "Day"} ${i + 1}`, value: (i + 1).toString() }))} />
+                <FancySelect value={dueDate} onChange={setDueDate} options={Array.from({ length: 31 }, (_, i) => ({ label: `${language === "vi" ? "Ngày" : "Day"} ${i + 1}`, value: (i + 1).toString() }))} />
               </div>
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setIsDebtModalOpen(false)} className="flex-1 rounded-xl bg-slate-100 px-4 py-3 font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300">{t("common.cancel")}</button>

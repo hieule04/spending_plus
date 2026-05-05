@@ -5,7 +5,7 @@ import { getSummaryStats } from "../service/api";
 import { 
   PieChart, Pie, Cell, Tooltip as PieTooltip, Legend, 
   XAxis, YAxis, CartesianGrid, Tooltip as BarTooltip, ResponsiveContainer,
-  AreaChart, Area
+  AreaChart, Area, BarChart, Bar
 } from "recharts";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -26,6 +26,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
   const [period, setPeriod] = useState<string>("month");
   const [refDate, setRefDate] = useState<Date>(new Date());
   const [activeChart, setActiveChart] = useState<"ratio" | "trend">("ratio");
+  const [ratioChartType, setRatioChartType] = useState<"pie" | "bar">("pie");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
   const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
@@ -410,6 +411,48 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
     return null;
   };
 
+  const renderRatioChart = (heightClass: string) => {
+    if (!stats?.pie_data || stats.pie_data.length === 0) {
+      return (
+        <div className={`flex flex-col items-center justify-center ${heightClass} animate-fade-in ${subTextClass} md:h-full md:min-h-0 md:flex-1`}>
+          <p className="font-medium text-sm">{t('db.no_data')}</p>
+        </div>
+      );
+    }
+
+    if (ratioChartType === "bar") {
+      return (
+        <div className={`${heightClass} w-full animate-fade-in md:h-full md:min-h-0 md:flex-1`}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={stats.pie_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
+              <XAxis dataKey="category_name" stroke={axisColor} tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} tickMargin={10} interval={0} />
+              <YAxis stroke={axisColor} tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
+              <BarTooltip content={<CustomTooltip />} />
+              <Bar dataKey="amount" name={t('db.chart.expense')} radius={[8, 8, 0, 0]}>
+                {stats.pie_data.map((entry, index) => (<Cell key={`bar-cell-${index}`} fill={entry.color} stroke="none" />))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    }
+
+    return (
+      <div className={`${heightClass} w-full animate-fade-in md:h-full md:min-h-0 md:flex-1`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
+              {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
+            </Pie>
+            <PieTooltip content={<CustomPieTooltip />} />
+            <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
   // Shared styles
   const cardClass = 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-3xl';
   const headingClass = 'text-slate-900 dark:text-white font-bold';
@@ -549,28 +592,28 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
               <h3 className={`text-lg font-bold ${headingClass}`}>
                 {activeChart === "ratio" ? t("db.chart.ratio") : t("db.chart.trend")}
               </h3>
+              {activeChart === "ratio" && (
+                <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-900/50">
+                  {(["pie", "bar"] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setRatioChartType(type)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                        ratioChartType === type
+                          ? "bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {type === "pie" ? t("db.chart.pie") : t("db.chart.bar")}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {activeChart === "ratio" ? (
-              <>
-                {stats.pie_data && stats.pie_data.length > 0 ? (
-                  <div className="h-72 w-full animate-fade-in">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
-                          {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
-                        </Pie>
-                        <PieTooltip content={<CustomPieTooltip />} />
-                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className={`flex flex-col items-center justify-center h-72 animate-fade-in ${subTextClass}`}>
-                    <p className="font-medium text-sm">{t('db.no_data')}</p>
-                  </div>
-                )}
-              </>
+              renderRatioChart("h-72")
             ) : (
               <>
                 {stats.line_data && stats.line_data.length > 0 ? (
@@ -606,25 +649,25 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
             <div className={`p-4 sm:p-8 md:p-6 rounded-3xl shadow-sm ${cardClass} md:flex md:min-h-0 md:flex-col`}>
               <div className="mb-5 flex items-center justify-between gap-4 md:flex-none">
                 <h3 className={`text-lg md:text-base font-bold ${headingClass}`}>{t("db.chart.ratio")}</h3>
+                <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-900/50">
+                  {(["pie", "bar"] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setRatioChartType(type)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                        ratioChartType === type
+                          ? "bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {type === "pie" ? t("db.chart.pie") : t("db.chart.bar")}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {stats.pie_data && stats.pie_data.length > 0 ? (
-                <div className="h-64 xl:h-72 w-full animate-fade-in md:h-full md:min-h-0 md:flex-1">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={stats.pie_data} dataKey="amount" nameKey="category_name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={3}>
-                        {stats.pie_data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}
-                      </Pie>
-                      <PieTooltip content={<CustomPieTooltip />} />
-                      <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className={`flex flex-col items-center justify-center h-64 xl:h-72 animate-fade-in ${subTextClass} md:h-full md:min-h-0 md:flex-1`}>
-                  <p className="font-medium text-sm">{t('db.no_data')}</p>
-                </div>
-              )}
+              {renderRatioChart("h-64 xl:h-72")}
             </div>
 
             <div className={`p-4 sm:p-8 md:p-6 rounded-3xl shadow-sm ${cardClass} md:flex md:min-h-0 md:flex-col`}>

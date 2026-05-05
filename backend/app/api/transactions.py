@@ -68,6 +68,8 @@ def list_all(
     limit: int = 50,
     start_date: datetime | None = Query(default=None),
     end_date: datetime | None = Query(default=None),
+    category_id: UUID | None = Query(default=None),
+    transaction_type: str | None = Query(default=None, alias="type"),
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -79,6 +81,8 @@ def list_all(
         limit=limit,
         start_date=start_date,
         end_date=end_date,
+        category_id=category_id,
+        transaction_type=transaction_type,
     )
 
 

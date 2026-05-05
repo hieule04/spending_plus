@@ -4,6 +4,7 @@ Router xử lý Đăng ký và Đăng nhập.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 import random
 from datetime import datetime, timedelta, timezone
@@ -99,6 +100,12 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
         }
     except HTTPException:
         raise
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=503,
+            detail="Khong the ket noi co so du lieu. Vui long kiem tra DATABASE_URL/Supabase.",
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi đăng nhập: {str(e)}")
 

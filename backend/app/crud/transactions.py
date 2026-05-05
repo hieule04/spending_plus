@@ -49,10 +49,16 @@ def list_transactions(
     limit: int = 50,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
+    category_id: UUID | None = None,
+    transaction_type: str | None = None,
 ) -> list[models.Transaction]:
     """Lấy danh sách giao dịch của user, sắp xếp theo ngày giảm dần."""
     query = db.query(models.Transaction).filter(models.Transaction.user_id == user_id)
 
+    if category_id is not None:
+        query = query.filter(models.Transaction.category_id == category_id)
+    if transaction_type is not None:
+        query = query.filter(models.Transaction.type == transaction_type)
     if start_date is not None:
         query = query.filter(models.Transaction.date >= start_date)
     if end_date is not None:

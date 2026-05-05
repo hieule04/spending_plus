@@ -155,12 +155,14 @@ export const deleteCategory = async (id: string) => {
 // 4. Transactions
 // ==========================================
 
-export const listTransactions = async (params?: { startDate?: string; endDate?: string; limit?: number }) => {
+export const listTransactions = async (params?: { startDate?: string; endDate?: string; categoryId?: string; type?: string; limit?: number }) => {
   try {
     const response = await api.get("/api/transactions/", {
       params: {
         start_date: params?.startDate,
         end_date: params?.endDate,
+        category_id: params?.categoryId,
+        type: params?.type,
         limit: params?.limit ?? 200,
       },
     });
