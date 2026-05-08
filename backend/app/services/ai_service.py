@@ -1,7 +1,6 @@
 """
 app/services/ai_service.py
-Service tích hợp Google Gemini AI cho chức năng chat.
-Sử dụng google-genai SDK (phiên bản mới).
+Service tích hợp Groq AI cho chức năng chat.
 Giai đoạn 3: Hỗ trợ tự động nhập giao dịch qua ngôn ngữ tự nhiên.
 """
 
@@ -9,11 +8,12 @@ import json
 import os
 import re
 import ssl
+import urllib.error
+import urllib.request
 import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from google import genai
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -21,10 +21,6 @@ from app.core.config import settings
 from app import models, schemas
 from app.crud import transactions as crud_txn
 
-
-# ============================================================
-# System Prompt — hướng dẫn AI về vai trò và cách trả lời
-# ============================================================
 
 SYSTEM_INSTRUCTION_BASE = """\
 Bạn là bộ phân tích giao dịch của ứng dụng Spending Plus.
@@ -48,32 +44,23 @@ Quy tắc bắt buộc:
 - Nếu chưa đủ dữ liệu để tạo giao dịch, trả về action là "none".
 """
 
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
-# ============================================================
-# Helper: Parse phản hồi JSON từ AI
-# ============================================================
 
 def _parse_ai_response(raw_text: str) -> dict:
-    """
-    Parse JSON từ phản hồi của AI.
-    Xử lý trường hợp AI trả về có hoặc không có markdown code fences.
-    """
     text = raw_text.strip()
-
-    # Loại bỏ markdown code fences nếu có
     text = re.sub(r'^```(?:json)?\s*', '', text)
     text = re.sub(r'\s*```$', '', text)
     text = text.strip()
 
     try:
         data = json.loads(text)
-        # Validate cấu trúc cơ bản
         if "action" in data and "message" in data:
             return data
     except (json.JSONDecodeError, TypeError):
         pass
 
-    # Fallback: trả về raw text nếu không parse được
     return {
         "action": "none",
         "transaction_data": None,
@@ -81,51 +68,34 @@ def _parse_ai_response(raw_text: str) -> dict:
     }
 
 
-
-
-def _build_ssl_verify():
-    """
-    Tạo cấu hình verify cho HTTP client của google-genai.
-    Ưu tiên: biến môi trường SSL -> truststore (Windows cert store) -> certifi.
-    """
+def _build_ssl_context() -> ssl.SSLContext:
     env_ca = os.getenv("SSL_CERT_FILE") or os.getenv("REQUESTS_CA_BUNDLE")
     if env_ca:
-        print(f"[*] Gemini SSL verify via env CA bundle: {env_ca}")
-        return env_ca
+        print(f"[*] Groq SSL via env CA bundle: {env_ca}")
+        return ssl.create_default_context(cafile=env_ca)
 
     try:
         import truststore
 
-        ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        print("[*] Gemini SSL verify via truststore SSLContext")
-        return ctx
+        print("[*] Groq SSL via truststore SSLContext")
+        return truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     except Exception as e:
-        print(f"[!] truststore SSLContext unavailable for Gemini client: {e}")
+        print(f"[!] truststore SSLContext unavailable for Groq client: {e}")
 
     try:
         import certifi
 
         cert_path = certifi.where()
-        print(f"[*] Gemini SSL verify via certifi: {cert_path}")
-        return cert_path
+        print(f"[*] Groq SSL via certifi: {cert_path}")
+        return ssl.create_default_context(cafile=cert_path)
     except Exception as e:
-        print(f"[!] certifi unavailable for Gemini client: {e}")
+        print(f"[!] certifi unavailable for Groq client: {e}")
 
-    print("[!] Gemini SSL verify fallback: default True")
-    return True
-
-def _build_http_options(verify_value):
-    return genai.types.HttpOptions(
-        client_args={"verify": verify_value},
-        async_client_args={"verify": verify_value},
-    )
+    print("[!] Groq SSL fallback: default context")
+    return ssl.create_default_context()
 
 
 def _get_default_ai_account(user_id: uuid.UUID, db: Session) -> models.Account | None:
-    """
-    Chọn tài khoản mặc định cho giao dịch tạo từ AI.
-    Ưu tiên các nguồn tiền kiểu thẻ/ngân hàng trước, chỉ dùng tiền mặt khi không còn lựa chọn khác.
-    """
     accounts = (
         db.query(models.Account)
         .filter(models.Account.user_id == user_id)
@@ -150,57 +120,72 @@ def _get_default_ai_account(user_id: uuid.UUID, db: Session) -> models.Account |
             account.created_at or datetime.min,
         ),
     )
-# ============================================================
-# AIService Class
-# ============================================================
+
 
 class AIService:
     """
-    Wrapper async cho Google Genai SDK.
-    Sử dụng model gemini-flash-latest với system instruction.
+    Wrapper async cho Groq Chat Completions API.
     """
 
     def __init__(self):
-        if not settings.GOOGLE_API_KEY:
-            raise ValueError("GOOGLE_API_KEY chưa được cấu hình trong .env")
+        if not settings.GROQ_API_KEY:
+            raise ValueError("GROQ_API_KEY chưa được cấu hình trong .env")
 
-        self._ssl_verify = _build_ssl_verify()
-        self.client = genai.Client(
-            api_key=settings.GOOGLE_API_KEY,
-            http_options=_build_http_options(self._ssl_verify),
-        )
+        self.api_key = settings.GROQ_API_KEY
+        self.ssl_context = _build_ssl_context()
 
-    async def _call_gemini(self, user_message: str, system_instruction: str) -> str:
-        """
-        Gọi Gemini API bằng phương thức Synchronous để tránh lỗi DNS của aiohttp trên Windows/Anaconda.
-        Sử dụng asyncio.to_thread để chạy không gây block event loop.
-        """
+    async def _call_groq(self, user_message: str, system_instruction: str) -> str:
         import asyncio
         import time
+
         start_time = time.time()
-        
+
+        payload = {
+            "model": GROQ_MODEL,
+            "temperature": 0.1,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": user_message},
+            ],
+        }
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
         try:
-            print(f"[*] Calling Gemini... (Model: gemini-flash-latest)")
-            
-            # Sử dụng đồng bộ (Sync) nhưng bọc trong Thread để không treo UI
-            def _sync_call():
-                return self.client.models.generate_content(
-                    model="gemini-flash-latest",
-                    contents=user_message,
-                    config=genai.types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                    ),
+            print(f"[*] Calling Groq... (Model: {GROQ_MODEL})")
+
+            def _sync_call() -> str:
+                request = urllib.request.Request(
+                    GROQ_API_URL,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers=headers,
+                    method="POST",
                 )
-            
-            response = await asyncio.to_thread(_sync_call)
-            
+                with urllib.request.urlopen(
+                    request,
+                    context=self.ssl_context,
+                    timeout=60,
+                ) as response:
+                    body = json.loads(response.read().decode("utf-8"))
+                    return body["choices"][0]["message"]["content"]
+
+            response_text = await asyncio.to_thread(_sync_call)
             duration = time.time() - start_time
-            print(f"[+] Gemini responded in {duration:.2f}s")
-            return response.text
-            
+            print(f"[+] Groq responded in {duration:.2f}s")
+            return response_text
+
+        except urllib.error.HTTPError as e:
+            duration = time.time() - start_time
+            error_body = e.read().decode("utf-8", errors="ignore")
+            print(f"[!] Groq HTTP Error after {duration:.2f}s: {error_body}")
+            raise RuntimeError(f"Groq API lỗi HTTP {e.code}: {error_body}") from e
         except Exception as e:
             duration = time.time() - start_time
-            print(f"[!] Gemini Error after {duration:.2f}s: {str(e)}")
+            print(f"[!] Groq Error after {duration:.2f}s: {str(e)}")
             raise
 
     async def process_chat(
@@ -209,13 +194,6 @@ class AIService:
         db: Session,
         user_id: uuid.UUID,
     ) -> dict:
-        """
-        Xử lý tin nhắn chat:
-        1. Tạo system instruction tối giản từ thời gian hệ thống.
-        2. Gọi Gemini.
-        3. Parse JSON → nếu có action 'create_transaction' thì tự động tạo giao dịch.
-        4. Trả về dict {"message": str, "transaction_created": bool}.
-        """
         try:
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             full_instruction = (
@@ -223,16 +201,13 @@ class AIService:
                 f"{SYSTEM_INSTRUCTION_BASE}"
             )
 
-            # Gọi Gemini
-            raw_reply = await self._call_gemini(user_message, full_instruction)
+            raw_reply = await self._call_groq(user_message, full_instruction)
 
-            # Parse JSON
             parsed = _parse_ai_response(raw_reply)
             action = parsed.get("action", "none")
             message = parsed.get("message", raw_reply)
             transaction_created = False
 
-            # Xử lý tạo giao dịch tự động
             if action == "create_transaction":
                 txn_data = parsed.get("transaction_data")
                 if txn_data:
@@ -241,7 +216,6 @@ class AIService:
                             db, user_id, txn_data
                         )
                     except Exception:
-                        # Nếu tạo giao dịch thất bại, vẫn trả message cho user
                         message += "\n\n⚠️ Rất tiếc, không thể tự động tạo giao dịch. Vui lòng thêm thủ công."
                         transaction_created = False
 
@@ -251,7 +225,7 @@ class AIService:
             }
 
         except Exception as e:
-            raise RuntimeError(f"Lỗi khi gọi Gemini AI: {str(e)}") from e
+            raise RuntimeError(f"Lỗi khi gọi Groq AI: {str(e)}") from e
 
     def _execute_transaction(
         self,
@@ -259,23 +233,17 @@ class AIService:
         user_id: uuid.UUID,
         txn_data: dict,
     ) -> bool:
-        """
-        Tạo giao dịch trong database dựa trên dữ liệu AI trả về.
-        Trả về True nếu thành công.
-        """
         amount = Decimal(str(txn_data.get("amount", 0)))
         txn_type = txn_data.get("type", "expense")
         category_name = txn_data.get("category_name", "")
         note = txn_data.get("note", "")
         date_str = txn_data.get("date", datetime.now().strftime("%Y-%m-%d"))
 
-        # Parse date
         try:
             txn_date = datetime.strptime(date_str, "%Y-%m-%d")
         except (ValueError, TypeError):
             txn_date = datetime.now()
 
-        # Tìm category theo tên (không phân biệt hoa thường)
         category_id = None
         if category_name:
             category = db.query(models.Category).filter(
@@ -285,13 +253,10 @@ class AIService:
             if category:
                 category_id = category.id
 
-        # Giao dịch tạo từ AI mặc định ưu tiên tài khoản thẻ/ngân hàng, không ưu tiên tiền mặt.
         account = _get_default_ai_account(user_id, db)
-
         if not account:
-            return False  # User chưa có tài khoản nào
+            return False
 
-        # Tạo schema TransactionCreate
         txn_schema = schemas.TransactionCreate(
             amount=amount,
             type=txn_type,
@@ -301,7 +266,6 @@ class AIService:
             category_id=category_id,
         )
 
-        # Gọi CRUD — hàm này đã xử lý balance, savings, debts, budget notifications
         crud_txn.create_transaction(
             db=db,
             user_id=user_id,
@@ -312,6 +276,4 @@ class AIService:
         return True
 
 
-# Singleton — import từ bất kỳ đâu trong project
 ai_service = AIService()
-
