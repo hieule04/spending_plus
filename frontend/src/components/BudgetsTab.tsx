@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { getBudgetReport, upsertBudget, listCategories, deleteBudget } from "../service/api";
+import { getBudgetReport, upsertBudget, listCategories, deleteBudget, listTransactions } from "../service/api";
 import ConfirmModal from "./ConfirmModal";
 import FancySelect from "./FancySelect";
 import CurrencyInput from "./CurrencyInput";
 import MobilePageHeader from "./MobilePageHeader";
+import RelatedTransactionsPanel, { type RelatedTransaction } from "./RelatedTransactionsPanel";
 import { useLanguage } from "../context/LanguageContext";
 
 interface BudgetsTabProps {
@@ -28,6 +29,9 @@ export default function BudgetsTab({ onOpenMobileMenu }: BudgetsTabProps) {
   const [editingBudget, setEditingBudget] = useState<any | null>(null);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [selectedBudget, setSelectedBudget] = useState<any | null>(null);
+  const [relatedTransactions, setRelatedTransactions] = useState<RelatedTransaction[]>([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -112,6 +116,27 @@ export default function BudgetsTab({ onOpenMobileMenu }: BudgetsTabProps) {
       setTimeout(() => setMessage(null), 3000);
     }
   };
+
+  const loadBudgetTransactions = async (budget: any) => {
+    setSelectedBudget(budget);
+    setRelatedLoading(true);
+    try {
+      const data = await listTransactions({ limit: 1000 });
+      setRelatedTransactions(
+        (data || []).filter((txn: any) => txn.category_id === budget.category_id && txn.type === "expense")
+      );
+    } catch (err: any) {
+      setMessage({ text: err.message || t('common.error_load'), type: "error" });
+      setRelatedTransactions([]);
+    } finally {
+      setRelatedLoading(false);
+    }
+  };
+
+  const clearSelectedBudget = () => {
+    setSelectedBudget(null);
+    setRelatedTransactions([]);
+  };
   const gridCardClass = "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-3xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl";
   
   const textTitleClass = "text-slate-900 dark:text-white";
@@ -134,14 +159,14 @@ export default function BudgetsTab({ onOpenMobileMenu }: BudgetsTabProps) {
           <div className="w-32">
             <FancySelect 
               value={month} 
-              onChange={(val) => setMonth(Number(val))}
+              onChange={(val) => { clearSelectedBudget(); setMonth(Number(val)); }}
               options={Array.from({length: 12}, (_, i) => ({ label: `${t('common.month')} ${i + 1}`, value: i + 1 }))}
             />
           </div>
           <div className="w-28">
             <FancySelect 
               value={year} 
-              onChange={(val) => setYear(Number(val))}
+              onChange={(val) => { clearSelectedBudget(); setYear(Number(val)); }}
               options={[year-1, year, year+1].map(y => ({ label: String(y), value: y }))}
             />
           </div>
@@ -199,17 +224,26 @@ export default function BudgetsTab({ onOpenMobileMenu }: BudgetsTabProps) {
             const exceedLimit = pct > 100;
 
             return (
-              <div key={report.category_id} className={`${gridCardClass} group`}>
+              <div
+                key={report.category_id}
+                role="button"
+                tabIndex={0}
+                onClick={() => loadBudgetTransactions(report)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") loadBudgetTransactions(report); }}
+                className={`${gridCardClass} group cursor-pointer ${
+                  selectedBudget?.category_id === report.category_id ? "ring-2 ring-blue-500/40 border-blue-500" : ""
+                }`}
+              >
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex flex-col truncate">
                     <h3 className={`font-black text-xl truncate ${textTitleClass}`}>{report.category_name}</h3>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleOpenModal(report)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-blue-500">
+                      <button onClick={(e) => { e.stopPropagation(); handleOpenModal(report); }} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-blue-500">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
                       </button>
-                      <button onClick={() => setConfirmDeleteId(report.budget_id)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-rose-500">
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(report.budget_id); }} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-rose-500">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-.355 5.945a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.347-9Zm5.485.058a.75.75 0 0 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z" clipRule="evenodd" /></svg>
                       </button>
                     </div>
@@ -265,6 +299,16 @@ export default function BudgetsTab({ onOpenMobileMenu }: BudgetsTabProps) {
           </button>
 
         </div>
+      )}
+
+      {selectedBudget && (
+        <RelatedTransactionsPanel
+          title={selectedBudget.category_name}
+          transactions={relatedTransactions}
+          loading={relatedLoading}
+          emptyText="Ngân sách này chưa có giao dịch trong tháng đã chọn."
+          onClose={clearSelectedBudget}
+        />
       )}
 
       {/* Setup Modal — rendered via portal to escape overflow-auto clipping */}
