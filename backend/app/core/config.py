@@ -94,8 +94,8 @@ class Settings:
     # --- CORS ---
     CORS_ORIGINS: list[str] = _parse_origins(os.getenv("CORS_ORIGINS", ""))
 
-    # --- Groq AI ---
-    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", os.getenv("GOOGLE_API_KEY", ""))
+    # --- Gemini AI ---
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
     # --- Email (FastAPI-Mail) ---
     MAIL_USERNAME: str = os.getenv("MAIL_USERNAME", "")

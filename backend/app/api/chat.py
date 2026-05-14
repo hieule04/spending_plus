@@ -20,7 +20,7 @@ async def chat_with_ai(
     db: Session = Depends(get_db),
 ):
     """
-    Gửi câu hỏi đến trợ lý AI (Groq) và nhận phản hồi.
+    Gui cau hoi den tro ly AI (Gemini) va nhan phan hoi.
     - Yêu cầu xác thực JWT.
     - Giới hạn nội dung: 1–2000 ký tự.
     - Lưu lại lịch sử chat.

@@ -95,11 +95,17 @@ export default function ChatTab({ onOpenMobileMenu }: ChatTabProps) {
         window.dispatchEvent(new Event("refresh_transactions"));
         setTimeout(() => setShowToast(false), 4000);
       }
-    } catch {
+    } catch (error) {
+      const fallbackMessage = t("chat.error");
+      const detailedMessage =
+        error instanceof Error && error.message.trim()
+          ? error.message.trim()
+          : fallbackMessage;
+
       const errorMsg: Message = {
         id: Date.now() + 1,
         role: "ai",
-        content: t("chat.error"),
+        content: detailedMessage,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMsg]);

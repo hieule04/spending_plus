@@ -56,7 +56,7 @@ pip install -r ../requirements.txt
 DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
 
 # Google Gemini API Key
-GOOGLE_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 
 # JWT Secret Key (Dùng để mã hóa Token Đăng nhập)
 SECRET_KEY=your_super_secret_string_here_12345
@@ -66,7 +66,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=43200
 PORT=8000
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
-> *Lưu ý: Đăng ký [Google AI Studio](https://aistudio.google.com/) để lấy `GOOGLE_API_KEY`, và [Supabase](https://supabase.com/) để lấy `DATABASE_URL`.*
+> *Lưu ý: Đăng ký [Google AI Studio](https://aistudio.google.com/) để lấy `GEMINI_API_KEY`, và [Supabase](https://supabase.com/) để lấy `DATABASE_URL`.*
 
 **4. Khởi chạy Server Backend:**
 ```bash
