@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 import random
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from app.database import get_db
 from app import schemas, models
@@ -15,25 +16,40 @@ from app.crud import users as crud_users
 from app.core.security import verify_password, create_access_token
 from app.core.config import settings
 import os
-from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+try:
+    from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+except ModuleNotFoundError:
+    ConnectionConfig = FastMail = MessageSchema = MessageType = None
 
-# Cấu hình kết nối Email
-# MAIL_FROM tự động dùng MAIL_USERNAME nếu biến MAIL_FROM chưa được set trên server
-_mail_from = os.getenv("MAIL_FROM") or os.getenv("MAIL_USERNAME", "")
+def _build_fastmail() -> Optional[FastMail]:
+    """Khởi tạo FastMail nếu đã có đủ cấu hình cơ bản."""
+    if FastMail is None or ConnectionConfig is None:
+        print("[!] fastapi_mail is not installed. OTP email sending is disabled.")
+        return None
 
-conf = ConnectionConfig(
-    MAIL_USERNAME = os.getenv("MAIL_USERNAME", ""),
-    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", ""),
-    MAIL_FROM = _mail_from,
-    MAIL_PORT = int(os.getenv("MAIL_PORT", "587")),
-    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com"),
-    MAIL_STARTTLS = True,
-    MAIL_SSL_TLS = False,
-    USE_CREDENTIALS = True,
-    VALIDATE_CERTS = False
-)
+    mail_username = os.getenv("MAIL_USERNAME", "").strip()
+    mail_password = os.getenv("MAIL_PASSWORD", "").strip()
+    mail_from = (os.getenv("MAIL_FROM") or mail_username).strip()
 
-fastmail = FastMail(conf)
+    if not mail_username or not mail_password or not mail_from:
+        print("[!] Mail config incomplete. OTP email sending is disabled.")
+        return None
+
+    conf = ConnectionConfig(
+        MAIL_USERNAME=mail_username,
+        MAIL_PASSWORD=mail_password,
+        MAIL_FROM=mail_from,
+        MAIL_PORT=int(os.getenv("MAIL_PORT", "587")),
+        MAIL_SERVER=os.getenv("MAIL_SERVER", "smtp.gmail.com"),
+        MAIL_STARTTLS=True,
+        MAIL_SSL_TLS=False,
+        USE_CREDENTIALS=True,
+        VALIDATE_CERTS=False,
+    )
+    return FastMail(conf)
+
+
+fastmail = _build_fastmail()
 
 router = APIRouter(tags=["Auth"])
 
@@ -58,16 +74,14 @@ def register(user: schemas.UserCreate, bg_tasks: BackgroundTasks, db: Session = 
             otp_code=otp_code, otp_expires_at=expires_at
         )
 
-        # Tạo nội dung email
-        message = MessageSchema(
-            subject="Xác thực tài khoản Spending Plus",
-            recipients=[new_user.email],
-            body=f"Mã xác thực của bạn là: {otp_code}",
-            subtype=MessageType.plain
-        )
-
-        # Gửi email chạy ngầm
-        bg_tasks.add_task(fastmail.send_message, message)
+        if fastmail is not None:
+            message = MessageSchema(
+                subject="Xác thực tài khoản Spending Plus",
+                recipients=[new_user.email],
+                body=f"Mã xác thực của bạn là: {otp_code}",
+                subtype=MessageType.plain,
+            )
+            bg_tasks.add_task(fastmail.send_message, message)
 
         return new_user
     except HTTPException:

@@ -1,7 +1,6 @@
 """
 app/services/ai_service.py
-Service tích hợp Google Gemini AI cho chức năng chat.
-Sử dụng google-genai SDK (phiên bản mới).
+Service tich hop Google Gemini AI cho chuc nang chat.
 Giai đoạn 3: Hỗ trợ tự động nhập giao dịch qua ngôn ngữ tự nhiên.
 """
 
@@ -9,160 +8,60 @@ import json
 import os
 import re
 import ssl
+import unicodedata
+import urllib.error
+import urllib.request
 import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from google import genai
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract
 
 from app.core.config import settings
 from app import models, schemas
 from app.crud import transactions as crud_txn
 
 
-# ============================================================
-# System Prompt — hướng dẫn AI về vai trò và cách trả lời
-# ============================================================
-
 SYSTEM_INSTRUCTION_BASE = """\
-Bạn là trợ lý tài chính của ứng dụng Spending Plus.
-Hãy trả lời ngắn gọn, lịch sự.
-Bạn có thể tư vấn về quản lý chi tiêu, tiết kiệm, ngân sách và đầu tư cá nhân.
-Nếu câu hỏi không liên quan đến tài chính, hãy nhẹ nhàng hướng người dùng quay lại chủ đề.
-Nếu người dùng hỏi về số dư, chi tiêu hoặc tư vấn, hãy dựa vào dữ liệu thực tế ở trên để trả lời chính xác.
-Không được bịa đặt con số.
+Bạn là bộ phân tích giao dịch của ứng dụng Spending Plus.
+Nhiệm vụ duy nhất của bạn là đọc tin nhắn hiện tại của người dùng và bóc tách thông tin để tạo giao dịch mới nếu có thể.
 
-=== QUY TẮC TỰ ĐỘNG NHẬP GIAO DỊCH ===
-Nếu người dùng có ý định thêm một giao dịch mới (ví dụ: 'mới tiêu 50k ăn phở', 'vừa ăn trưa 80 nghìn', 'thu về 5 triệu lương', 'hôm qua mua sách 120k'), bạn PHẢI trả về **chỉ duy nhất một JSON hợp lệ** (KHÔNG có markdown code fences, KHÔNG có backtick) theo đúng cấu trúc sau:
+Bạn PHẢI luôn trả về chỉ duy nhất một JSON hợp lệ, không markdown, không backtick, theo một trong 2 cấu trúc sau:
 
-{"action": "create_transaction", "transaction_data": {"amount": <số tiền VNĐ, kiểu số nguyên>, "type": "<expense hoặc income>", "category_name": "<tên danh mục phù hợp nhất từ danh sách bên dưới>", "note": "<ghi chú ngắn gọn>", "date": "<YYYY-MM-DD>"}, "message": "<câu trả lời thân thiện xác nhận giao dịch>"}
+{"action": "create_transaction", "transaction_data": {"amount": <số tiền VNĐ, kiểu số nguyên>, "type": "<expense hoặc income>", "category_name": "<tên danh mục ngắn gọn, phù hợp nhất>", "note": "<ghi chú ngắn gọn>", "date": "<YYYY-MM-DD>"}, "message": "<câu xác nhận ngắn gọn>"}
 
-Nếu người dùng KHÔNG có ý định thêm giao dịch (chỉ hỏi, trò chuyện, xin tư vấn...), bạn PHẢI trả về JSON:
+{"action": "none", "transaction_data": null, "message": "<câu trả lời ngắn gọn nói rằng chưa đủ dữ liệu để tạo giao dịch hoặc tin nhắn không phải yêu cầu ghi giao dịch>"}
 
-{"action": "none", "transaction_data": null, "message": "<câu trả lời thông thường>"}
-
-LƯU Ý QUAN TRỌNG:
-- Luôn trả về JSON thuần túy, KHÔNG BAO GIỜ bọc trong ```json ... ``` hay bất kỳ markdown nào.
-- Nếu người dùng nói 'k', 'nghìn', hoặc 'ngàn' thì nhân với 1000. Nếu nói 'triệu' hoặc 'tr' thì nhân với 1000000.
-- Nếu không nói rõ ngày, dùng ngày hôm nay.
-- Nếu nói 'hôm qua', tính lùi 1 ngày. 'Hôm kia' tính lùi 2 ngày.
-- Nếu không rõ đó là thu hay chi, mặc định là 'expense'.
-- Chọn category_name gần nhất từ danh sách danh mục bên dưới. Nếu không khớp, dùng danh mục chung nhất.
+Quy tắc bắt buộc:
+- Chỉ tập trung vào hành động tạo giao dịch từ tin nhắn hiện tại.
+- Nếu người dùng nói 'k', 'nghìn', hoặc 'ngàn' thì nhân với 1000.
+- Nếu người dùng nói 'triệu' hoặc 'tr' thì nhân với 1000000.
+- Nếu không nói rõ ngày, dùng ngày hiện tại của hệ thống được cung cấp.
+- Nếu nói 'hôm qua', tính lùi 1 ngày. Nếu nói 'hôm kia', tính lùi 2 ngày.
+- Nếu không rõ là thu hay chi, mặc định là 'expense'.
+- `category_name` phải là một tên danh mục ngắn, tự nhiên, phù hợp với nội dung tin nhắn.
+- `note` phải ngắn gọn, bám sát nội dung người dùng.
+- Nếu chưa đủ dữ liệu để tạo giao dịch, trả về action là "none".
 """
 
+GEMINI_API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-# ============================================================
-# Helper: Lấy ngữ cảnh tài chính
-# ============================================================
-
-def get_financial_context(user_id: uuid.UUID, db: Session) -> str:
-    """Truy vấn dữ liệu tài chính của user để làm ngữ cảnh cung cấp cho AI."""
-    now = datetime.now()
-    current_month = now.month
-    current_year = now.year
-
-    # 1. Tổng số dư
-    total_balance = db.query(func.sum(models.Account.balance)).filter(
-        models.Account.user_id == user_id
-    ).scalar() or 0.0
-
-    # 2. Tổng chi tiêu tháng
-    total_expense = db.query(func.sum(models.Transaction.amount)).filter(
-        models.Transaction.user_id == user_id,
-        models.Transaction.type == 'expense',
-        extract('month', models.Transaction.date) == current_month,
-        extract('year', models.Transaction.date) == current_year
-    ).scalar() or 0.0
-
-    # 3. Mục tiêu tiết kiệm và tiến độ
-    savings_goals = db.query(models.SavingsGoal).filter(
-        models.SavingsGoal.user_id == user_id,
-        models.SavingsGoal.is_completed == False
-    ).all()
-    saving_texts = []
-    for sg in savings_goals:
-        pct = (sg.current_amount / sg.target_amount * 100) if sg.target_amount > 0 else 0
-        saving_texts.append(f'- Sổ "{sg.name}": đạt {pct:.1f}% ({float(sg.current_amount):,.0f}đ / {float(sg.target_amount):,.0f}đ)')
-    saving_str = "\n".join(saving_texts) if saving_texts else "Không có"
-
-    # 4. Các khoản nợ
-    debts = db.query(models.Debt).filter(
-        models.Debt.user_id == user_id,
-        models.Debt.remaining_amount > 0
-    ).all()
-    debt_texts = []
-    for d in debts:
-        debt_texts.append(f'- Nợ "{d.creditor_name}": còn nợ {float(d.remaining_amount):,.0f}đ, trả mỗi tháng {float(d.monthly_payment):,.0f}đ')
-    debt_str = "\n".join(debt_texts) if debt_texts else "Không có"
-
-    # 5. Ngân sách tháng này
-    budgets = db.query(models.Budget).filter(
-        models.Budget.user_id == user_id,
-        models.Budget.month == current_month,
-        models.Budget.year == current_year
-    ).all()
-    total_budget_limit = sum(b.amount_limit for b in budgets) or 0.0
-    remaining_budget = float(total_budget_limit) - float(total_expense)
-
-    # 6. Danh sách danh mục
-    categories = db.query(models.Category).filter(
-        models.Category.user_id == user_id
-    ).all()
-    category_texts = []
-    for cat in categories:
-        category_texts.append(f'- "{cat.name}" (loại: {cat.type})')
-    category_str = "\n".join(category_texts) if category_texts else "Chưa có danh mục nào"
-
-    # 7. Danh sách tài khoản
-    accounts = db.query(models.Account).filter(
-        models.Account.user_id == user_id
-    ).all()
-    account_texts = []
-    for acc in accounts:
-        account_texts.append(f'- "{acc.name}" (loại: {acc.type}, số dư: {float(acc.balance):,.0f}đ)')
-    account_str = "\n".join(account_texts) if account_texts else "Chưa có tài khoản nào"
-
-    context = (
-        f"Ngày hiện tại: {now.strftime('%d/%m/%Y')}.\n\n"
-        f"Ngữ cảnh tài chính của người dùng:\n"
-        f"Tổng số dư: {float(total_balance):,.0f}đ.\n"
-        f"Đã chi tháng này ({current_month}/{current_year}): {float(total_expense):,.0f}đ.\n"
-        f"Ngân sách tháng này: {float(total_budget_limit):,.0f}đ (còn lại: {remaining_budget:,.0f}đ).\n\n"
-        f"Tiết kiệm đang theo dõi:\n{saving_str}\n\n"
-        f"Các khoản nợ đang theo dõi:\n{debt_str}\n\n"
-        f"Danh sách danh mục của người dùng:\n{category_str}\n\n"
-        f"Danh sách tài khoản của người dùng:\n{account_str}"
-    )
-    return context
-
-
-# ============================================================
-# Helper: Parse phản hồi JSON từ AI
-# ============================================================
 
 def _parse_ai_response(raw_text: str) -> dict:
-    """
-    Parse JSON từ phản hồi của AI.
-    Xử lý trường hợp AI trả về có hoặc không có markdown code fences.
-    """
     text = raw_text.strip()
-
-    # Loại bỏ markdown code fences nếu có
     text = re.sub(r'^```(?:json)?\s*', '', text)
     text = re.sub(r'\s*```$', '', text)
     text = text.strip()
 
     try:
         data = json.loads(text)
-        # Validate cấu trúc cơ bản
         if "action" in data and "message" in data:
             return data
     except (json.JSONDecodeError, TypeError):
         pass
 
-    # Fallback: trả về raw text nếu không parse được
     return {
         "action": "none",
         "transaction_data": None,
@@ -170,24 +69,17 @@ def _parse_ai_response(raw_text: str) -> dict:
     }
 
 
-
-
-def _build_ssl_verify():
-    """
-    Tạo cấu hình verify cho HTTP client của google-genai.
-    Ưu tiên: biến môi trường SSL -> truststore (Windows cert store) -> certifi.
-    """
+def _build_ssl_context() -> ssl.SSLContext:
     env_ca = os.getenv("SSL_CERT_FILE") or os.getenv("REQUESTS_CA_BUNDLE")
     if env_ca:
-        print(f"[*] Gemini SSL verify via env CA bundle: {env_ca}")
-        return env_ca
+        print(f"[*] Gemini SSL via env CA bundle: {env_ca}")
+        return ssl.create_default_context(cafile=env_ca)
 
     try:
         import truststore
 
-        ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        print("[*] Gemini SSL verify via truststore SSLContext")
-        return ctx
+        print("[*] Gemini SSL via truststore SSLContext")
+        return truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     except Exception as e:
         print(f"[!] truststore SSLContext unavailable for Gemini client: {e}")
 
@@ -195,26 +87,16 @@ def _build_ssl_verify():
         import certifi
 
         cert_path = certifi.where()
-        print(f"[*] Gemini SSL verify via certifi: {cert_path}")
-        return cert_path
+        print(f"[*] Gemini SSL via certifi: {cert_path}")
+        return ssl.create_default_context(cafile=cert_path)
     except Exception as e:
         print(f"[!] certifi unavailable for Gemini client: {e}")
 
-    print("[!] Gemini SSL verify fallback: default True")
-    return True
-
-def _build_http_options(verify_value):
-    return genai.types.HttpOptions(
-        client_args={"verify": verify_value},
-        async_client_args={"verify": verify_value},
-    )
+    print("[!] Gemini SSL fallback: default context")
+    return ssl.create_default_context()
 
 
 def _get_default_ai_account(user_id: uuid.UUID, db: Session) -> models.Account | None:
-    """
-    Chọn tài khoản mặc định cho giao dịch tạo từ AI.
-    Ưu tiên các nguồn tiền kiểu thẻ/ngân hàng trước, chỉ dùng tiền mặt khi không còn lựa chọn khác.
-    """
     accounts = (
         db.query(models.Account)
         .filter(models.Account.user_id == user_id)
@@ -239,54 +121,146 @@ def _get_default_ai_account(user_id: uuid.UUID, db: Session) -> models.Account |
             account.created_at or datetime.min,
         ),
     )
-# ============================================================
-# AIService Class
-# ============================================================
+
+
+def _format_vnd(value: Decimal) -> str:
+    amount = int(value or 0)
+    return f"{amount:,}".replace(",", ".") + " \u0111"
+
+
+def _normalize_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFD", value.lower().strip())
+    return "".join(char for char in normalized if unicodedata.category(char) != "Mn")
+
+
+def _try_handle_builtin_query(user_message: str, db: Session, user_id: uuid.UUID) -> dict | None:
+    text = _normalize_text(user_message)
+
+    greetings = {"chao", "hello", "hi", "xin chao", "alo"}
+    if text in greetings:
+        return {
+            "message": "Xin ch\u00e0o! T\u00f4i c\u00f3 th\u1ec3 gi\u00fap b\u1ea1n ghi giao d\u1ecbch, xem s\u1ed1 d\u01b0 t\u00e0i kho\u1ea3n v\u00e0 tr\u1ea3 l\u1eddi nhanh c\u00e1c th\u00f4ng tin t\u00e0i ch\u00ednh trong Spending Plus.",
+            "transaction_created": False,
+        }
+
+    if any(phrase in text for phrase in ["lam nhung gi", "giup gi", "chuc nang", "co the lam gi"]):
+        return {
+            "message": "T\u00f4i c\u00f3 th\u1ec3 gi\u00fap b\u1ea1n:\n- T\u1ef1 \u0111\u1ed9ng ghi giao d\u1ecbch, v\u00ed d\u1ee5: '\u0103n ph\u1edf 50k'\n- Xem s\u1ed1 d\u01b0 t\u00e0i kho\u1ea3n/v\u00ed\n- H\u1ed7 tr\u1ee3 ph\u00e2n lo\u1ea1i thu chi c\u01a1 b\u1ea3n\n- L\u01b0u l\u1ecbch s\u1eed tr\u00f2 chuy\u1ec7n",
+            "transaction_created": False,
+        }
+
+    balance_keywords = ["con bao nhieu", "so du", "balance", "bao nhieu tien"]
+    if any(keyword in text for keyword in balance_keywords):
+        accounts = (
+            db.query(models.Account)
+            .filter(models.Account.user_id == user_id, models.Account.deleted_at.is_(None))
+            .order_by(models.Account.created_at.asc())
+            .all()
+        )
+
+        if "ngan hang" in text or "bank" in text:
+            accounts = [
+                account for account in accounts
+                if (account.type or "").lower() == "bank"
+                or "ngan hang" in _normalize_text(account.name or "")
+                or "bank" in _normalize_text(account.name or "")
+            ]
+            label = "t\u00e0i kho\u1ea3n ng\u00e2n h\u00e0ng"
+        else:
+            label = "t\u00e0i kho\u1ea3n"
+
+        if not accounts:
+            return {
+                "message": f"B\u1ea1n ch\u01b0a c\u00f3 {label} n\u00e0o trong h\u1ec7 th\u1ed1ng.",
+                "transaction_created": False,
+            }
+
+        total = sum((Decimal(account.balance or 0) for account in accounts), Decimal("0"))
+        lines = [f"T\u1ed5ng s\u1ed1 d\u01b0 {label}: {_format_vnd(total)}"]
+        lines.extend(f"- {account.name}: {_format_vnd(Decimal(account.balance or 0))}" for account in accounts)
+        return {
+            "message": "\n".join(lines),
+            "transaction_created": False,
+        }
+
+    return None
+
 
 class AIService:
     """
-    Wrapper async cho Google Genai SDK.
-    Sử dụng model gemini-flash-latest với system instruction.
+    Wrapper async cho Google Gemini GenerateContent API.
     """
 
     def __init__(self):
-        if not settings.GOOGLE_API_KEY:
-            raise ValueError("GOOGLE_API_KEY chưa được cấu hình trong .env")
+        if not settings.GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY chua duoc cau hinh trong .env")
 
-        self._ssl_verify = _build_ssl_verify()
-        self.client = genai.Client(
-            api_key=settings.GOOGLE_API_KEY,
-            http_options=_build_http_options(self._ssl_verify),
-        )
+        self.api_key = settings.GEMINI_API_KEY
+        self.ssl_context = _build_ssl_context()
 
     async def _call_gemini(self, user_message: str, system_instruction: str) -> str:
-        """
-        Gọi Gemini API bằng phương thức Synchronous để tránh lỗi DNS của aiohttp trên Windows/Anaconda.
-        Sử dụng asyncio.to_thread để chạy không gây block event loop.
-        """
         import asyncio
         import time
+
         start_time = time.time()
-        
+
+        payload = {
+            "systemInstruction": {
+                "parts": [{"text": system_instruction}],
+            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": user_message}],
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "responseMimeType": "application/json",
+            },
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "x-goog-api-key": self.api_key,
+            "User-Agent": "SpendingPlus/1.0 (+https://spending-plus.local)",
+        }
+
         try:
-            print(f"[*] Calling Gemini... (Model: gemini-flash-latest)")
-            
-            # Sử dụng đồng bộ (Sync) nhưng bọc trong Thread để không treo UI
-            def _sync_call():
-                return self.client.models.generate_content(
-                    model="gemini-flash-latest",
-                    contents=user_message,
-                    config=genai.types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                    ),
+            print(f"[*] Calling Gemini... (Model: {GEMINI_MODEL})")
+
+            def _sync_call() -> str:
+                request = urllib.request.Request(
+                    GEMINI_API_URL_TEMPLATE.format(model=GEMINI_MODEL),
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers=headers,
+                    method="POST",
                 )
-            
-            response = await asyncio.to_thread(_sync_call)
-            
+                with urllib.request.urlopen(
+                    request,
+                    context=self.ssl_context,
+                    timeout=60,
+                ) as response:
+                    body = json.loads(response.read().decode("utf-8"))
+                    candidates = body.get("candidates") or []
+                    if not candidates:
+                        raise RuntimeError(f"Gemini khong tra ve candidates: {body}")
+                    parts = candidates[0].get("content", {}).get("parts") or []
+                    if not parts or "text" not in parts[0]:
+                        raise RuntimeError(f"Gemini response khong co text: {body}")
+                    return parts[0]["text"]
+
+            response_text = await asyncio.to_thread(_sync_call)
             duration = time.time() - start_time
             print(f"[+] Gemini responded in {duration:.2f}s")
-            return response.text
-            
+            return response_text
+
+        except urllib.error.HTTPError as e:
+            duration = time.time() - start_time
+            error_body = e.read().decode("utf-8", errors="ignore")
+            print(f"[!] Gemini HTTP Error after {duration:.2f}s: {error_body}")
+            raise RuntimeError(f"Gemini API loi HTTP {e.code}: {error_body}") from e
         except Exception as e:
             duration = time.time() - start_time
             print(f"[!] Gemini Error after {duration:.2f}s: {str(e)}")
@@ -298,28 +272,24 @@ class AIService:
         db: Session,
         user_id: uuid.UUID,
     ) -> dict:
-        """
-        Xử lý tin nhắn chat:
-        1. Tạo system instruction động (ngữ cảnh tài chính + quy tắc).
-        2. Gọi Gemini.
-        3. Parse JSON → nếu có action 'create_transaction' thì tự động tạo giao dịch.
-        4. Trả về dict {"message": str, "transaction_created": bool}.
-        """
         try:
-            # Build system instruction
-            financial_context = get_financial_context(user_id, db)
-            full_instruction = f"{financial_context}\n\n{SYSTEM_INSTRUCTION_BASE}"
+            builtin_reply = _try_handle_builtin_query(user_message, db, user_id)
+            if builtin_reply:
+                return builtin_reply
 
-            # Gọi Gemini
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            full_instruction = (
+                f"Thời gian hệ thống hiện tại: {current_time}\n\n"
+                f"{SYSTEM_INSTRUCTION_BASE}"
+            )
+
             raw_reply = await self._call_gemini(user_message, full_instruction)
 
-            # Parse JSON
             parsed = _parse_ai_response(raw_reply)
             action = parsed.get("action", "none")
             message = parsed.get("message", raw_reply)
             transaction_created = False
 
-            # Xử lý tạo giao dịch tự động
             if action == "create_transaction":
                 txn_data = parsed.get("transaction_data")
                 if txn_data:
@@ -328,7 +298,6 @@ class AIService:
                             db, user_id, txn_data
                         )
                     except Exception:
-                        # Nếu tạo giao dịch thất bại, vẫn trả message cho user
                         message += "\n\n⚠️ Rất tiếc, không thể tự động tạo giao dịch. Vui lòng thêm thủ công."
                         transaction_created = False
 
@@ -338,7 +307,7 @@ class AIService:
             }
 
         except Exception as e:
-            raise RuntimeError(f"Lỗi khi gọi Gemini AI: {str(e)}") from e
+            raise RuntimeError(f"Loi khi goi Gemini AI: {str(e)}") from e
 
     def _execute_transaction(
         self,
@@ -346,23 +315,17 @@ class AIService:
         user_id: uuid.UUID,
         txn_data: dict,
     ) -> bool:
-        """
-        Tạo giao dịch trong database dựa trên dữ liệu AI trả về.
-        Trả về True nếu thành công.
-        """
         amount = Decimal(str(txn_data.get("amount", 0)))
         txn_type = txn_data.get("type", "expense")
         category_name = txn_data.get("category_name", "")
         note = txn_data.get("note", "")
         date_str = txn_data.get("date", datetime.now().strftime("%Y-%m-%d"))
 
-        # Parse date
         try:
             txn_date = datetime.strptime(date_str, "%Y-%m-%d")
         except (ValueError, TypeError):
             txn_date = datetime.now()
 
-        # Tìm category theo tên (không phân biệt hoa thường)
         category_id = None
         if category_name:
             category = db.query(models.Category).filter(
@@ -372,13 +335,10 @@ class AIService:
             if category:
                 category_id = category.id
 
-        # Giao dịch tạo từ AI mặc định ưu tiên tài khoản thẻ/ngân hàng, không ưu tiên tiền mặt.
         account = _get_default_ai_account(user_id, db)
-
         if not account:
-            return False  # User chưa có tài khoản nào
+            return False
 
-        # Tạo schema TransactionCreate
         txn_schema = schemas.TransactionCreate(
             amount=amount,
             type=txn_type,
@@ -388,7 +348,6 @@ class AIService:
             category_id=category_id,
         )
 
-        # Gọi CRUD — hàm này đã xử lý balance, savings, debts, budget notifications
         crud_txn.create_transaction(
             db=db,
             user_id=user_id,
@@ -399,6 +358,4 @@ class AIService:
         return True
 
 
-# Singleton — import từ bất kỳ đâu trong project
 ai_service = AIService()
-

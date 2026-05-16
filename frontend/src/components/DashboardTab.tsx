@@ -461,7 +461,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
   const axisColor = '#475569'; 
 
   return (
-    <div className="flex flex-col h-full overflow-hidden animate-fade-in space-y-4 sm:space-y-6">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden animate-fade-in space-y-4 sm:space-y-6">
       <div className="flex-none md:hidden">
         <MobilePageHeader
           onOpenMobileMenu={onOpenMobileMenu}
@@ -480,9 +480,9 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
       </div>
       
       {/* Time Filter Bar */}
-      <div className={`hidden md:flex flex-wrap items-center justify-between gap-4 p-2 sm:p-2.5 rounded-2xl shadow-sm ${cardClass}`}>
+      <div className={`hidden md:grid md:grid-cols-[auto_minmax(0,1fr)] md:items-center gap-4 rounded-2xl p-2 sm:p-2.5 shadow-sm ${cardClass}`}>
         <h2 className={`font-bold px-3 hidden sm:block ${headingClass}`}>{t('db.title')}</h2>
-        <div className={`flex p-1 rounded-xl w-full sm:w-auto overflow-x-auto hide-scrollbar bg-slate-100 dark:bg-slate-900/50`}>
+        <div className={`flex w-full justify-start overflow-x-auto rounded-xl bg-slate-100 p-1 hide-scrollbar dark:bg-slate-900/50 md:ml-auto md:w-auto`}>
           {periodOptions.map(p => (
             <button
               key={String(p.value)}
@@ -536,7 +536,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
         </>
       )}
 
-      <div className="mobile-scroll-region flex-1 overflow-y-auto md:overflow-hidden hide-scrollbar space-y-4 sm:space-y-6 md:space-y-4 pb-2 md:pb-2">
+      <div className="mobile-scroll-region flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-2 hide-scrollbar md:overflow-hidden">
       {loading && !stats ? (
         <div className={`flex justify-center items-center h-48 p-6 rounded-2xl ${cardClass}`}>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -587,7 +587,7 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
             </button>
           </div>
 
-          <div className={`md:hidden p-4 rounded-3xl shadow-sm ${cardClass}`}>
+          <div className={`md:hidden rounded-3xl p-4 shadow-sm ${cardClass}`}>
             <div className="mb-6 flex items-center justify-between gap-4">
               <h3 className={`text-lg font-bold ${headingClass}`}>
                 {activeChart === "ratio" ? t("db.chart.ratio") : t("db.chart.trend")}
@@ -617,27 +617,25 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
             ) : (
               <>
                 {stats.line_data && stats.line_data.length > 0 ? (
-                  <div className="h-72 w-full relative animate-fade-in">
+                  <div className="chart-surface relative mx-auto h-72 w-full max-w-[32rem] animate-fade-in">
                     <svg style={{ height: 0 }}>
                       <defs>
                         <linearGradient id="colorIncomeMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
                         <linearGradient id="colorExpenseMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
                       </defs>
                     </svg>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
-                        <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
-                        <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
-                        <BarTooltip content={<CustomTooltip />} />
-                        <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                        <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncomeMobile)" />
-                        <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpenseMobile)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    <AreaChart responsive style={{ width: "100%", height: "100%" }} data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
+                      <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
+                      <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
+                      <BarTooltip content={<CustomTooltip />} />
+                      <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                      <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncomeMobile)" />
+                      <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpenseMobile)" />
+                    </AreaChart>
                   </div>
                 ) : (
-                  <div className={`flex flex-col items-center justify-center h-72 animate-fade-in ${subTextClass}`}>
+                  <div className={`flex h-72 w-full max-w-[32rem] flex-col items-center justify-center animate-fade-in ${subTextClass}`}>
                     <p className="font-medium">{t('db.no_transactions_period')}</p>
                   </div>
                 )}
@@ -645,8 +643,8 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
             )}
           </div>
 
-          <div className="hidden md:grid md:min-h-0 md:flex-1 grid-cols-1 gap-4 xl:grid-cols-2">
-            <div className={`p-4 sm:p-8 md:p-6 rounded-3xl shadow-sm ${cardClass} md:flex md:min-h-0 md:flex-col`}>
+          <div className="hidden grid-cols-1 gap-4 md:grid md:min-h-0 md:flex-1 xl:grid-cols-2">
+            <div className={`rounded-3xl p-4 shadow-sm sm:p-8 md:flex md:min-h-0 md:flex-col md:p-6 ${cardClass}`}>
               <div className="mb-5 flex items-center justify-between gap-4 md:flex-none">
                 <h3 className={`text-lg md:text-base font-bold ${headingClass}`}>{t("db.chart.ratio")}</h3>
                 <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-900/50">
@@ -670,33 +668,31 @@ export default function DashboardTab({ onOpenMobileMenu }: DashboardTabProps) {
               {renderRatioChart("h-64 xl:h-72")}
             </div>
 
-            <div className={`p-4 sm:p-8 md:p-6 rounded-3xl shadow-sm ${cardClass} md:flex md:min-h-0 md:flex-col`}>
+            <div className={`rounded-3xl p-4 shadow-sm sm:p-8 md:flex md:min-h-0 md:flex-col md:p-6 ${cardClass}`}>
               <div className="mb-5 flex items-center justify-between gap-4 md:flex-none">
                 <h3 className={`text-lg md:text-base font-bold ${headingClass}`}>{t("db.chart.trend")}</h3>
               </div>
 
               {stats.line_data && stats.line_data.length > 0 ? (
-                <div className="h-64 xl:h-72 w-full relative animate-fade-in md:h-full md:min-h-0 md:flex-1">
+                <div className="chart-surface relative mx-auto h-64 w-full max-w-[42rem] animate-fade-in md:h-full md:min-h-0 md:flex-1 xl:h-72">
                   <svg style={{ height: 0 }}>
                     <defs>
                       <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
                       <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
                     </defs>
                   </svg>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
-                      <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
-                      <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
-                      <BarTooltip content={<CustomTooltip />} />
-                      <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                      <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
-                      <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  <AreaChart responsive style={{ width: "100%", height: "100%" }} data={stats.line_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} opacity={0.2} />
+                    <XAxis dataKey="date" stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickMargin={10} minTickGap={20} />
+                    <YAxis stroke={axisColor} tick={{fill: axisColor, fontSize: 10}} axisLine={false} tickLine={false} tickFormatter={(value) => { if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`; if (value >= 1000) return `${(value / 1000).toFixed(0)}k`; return value; }} width={35} />
+                    <BarTooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                    <Area type="monotone" dataKey="income" name={t('db.chart.income')} stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
+                    <Area type="monotone" dataKey="expense" name={t('db.chart.expense')} stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
+                  </AreaChart>
                 </div>
               ) : (
-                <div className={`flex flex-col items-center justify-center h-64 xl:h-72 animate-fade-in ${subTextClass} md:h-full md:min-h-0 md:flex-1`}>
+                <div className={`flex h-64 w-full max-w-[42rem] flex-col items-center justify-center animate-fade-in ${subTextClass} md:h-full md:min-h-0 md:flex-1 xl:h-72`}>
                   <p className="font-medium">{t('db.no_transactions_period')}</p>
                 </div>
               )}

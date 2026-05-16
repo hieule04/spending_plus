@@ -47,15 +47,15 @@ export default function MobileLayout({
   ];
 
   return (
-    <div className="mobile-shell flex h-full w-full flex-col overflow-hidden bg-gray-50 dark:bg-slate-900">
-      <main className="flex-1 overflow-y-auto hide-scrollbar">
-        <div className="mobile-content px-4">
+    <div className="mobile-shell flex h-full min-h-0 w-full flex-col overflow-hidden bg-gray-50 dark:bg-slate-900">
+      <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden hide-scrollbar">
+        <div className="mobile-content flex min-h-full flex-col px-4">
           {children}
         </div>
       </main>
 
       <nav
-        className="bottom-nav z-40 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]"
+        className="bottom-nav z-40 shrink-0 border-t border-gray-200 bg-white px-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-800"
       >
         <div className="bottom-nav__inner mx-auto flex w-full max-w-md items-center justify-between">
           {navItems.map(({ id, label, Icon }) => {
